@@ -2,10 +2,10 @@
 \alias{get_data_range}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-%%  ~~function to do ... ~~
+Get AWAP data range
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+Get AWAP data for a range of dates
 }
 \usage{
 get_data_range(variable, measure, timestep, startdate, enddate)
@@ -54,42 +54,11 @@ get_data_range(variable, measure, timestep, startdate, enddate)
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
-
-## The function is currently defined as
-function (variable, measure, timestep, startdate, enddate) 
-{
-    if (timestep == "daily") {
-        thisdate <- startdate
-        while (thisdate <= enddate) {
-            get_data(variable, measure, timestep, format(as.POSIXct(thisdate), 
-                "\%Y\%m\%d"), format(as.POSIXct(thisdate), "\%Y\%m\%d"))
-            thisdate <- thisdate + as.double(as.difftime(1, units = "days"), 
-                units = "secs")
-        }
-    }
-    else if (timestep == "month") {
-        startdate <- as.POSIXlt(startdate)
-        startdate$mday <- 1
-        data.period.start <- seq(as.Date(startdate), as.Date(enddate), 
-            by = "month")
-        data.period.end <- as.Date(sapply(data.period.start, 
-            FUN = function(x) {
-                as.character(seq(x, x + 40, by = "month")[2] - 
-                  1)
-            }))
-        for (i in 1:length(data.period.start)) {
-            get_data(variable, measure, timestep, format(as.POSIXct(data.period.start[i]), 
-                "\%Y\%m\%d"), format(as.POSIXct(data.period.end[i]), 
-                "\%Y\%m\%d"))
-        }
-    }
-    else {
-        stop("Unsupported timestep, only 'daily' and 'month' are currently supported")
-    }
-  }
+ get_data_range(variable="temperature",
+                   measure="maxave",
+                   timestep="daily",
+                   startdate=as.POSIXct("2013-01-18"),
+                   enddate=as.POSIXct("2013-01-18"))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

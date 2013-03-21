@@ -1,9 +1,9 @@
 Package: awaptools
 Type: Package
-Title: What the package does (short line)
+Title: download and format Australian Water Availability Grids
 Version: 1.0
 Date: 2013-03-21
-Author: Who wrote it
-Maintainer: Who to complain to <yourfault@somewhere.net>
-Description: More about what it does (maybe more than one line)
-License: What license is it under?
+Author: ivanhanigan and ianszarka
+Maintainer: <ivan.hanigan@gmail.com>
+Description:  download and format Australian Water Availability Grids
+License: GPL (>= 2)
