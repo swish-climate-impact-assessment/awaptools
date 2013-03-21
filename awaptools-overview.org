@@ -56,8 +56,8 @@
   # name:DatesUnavailable
   require(devtools)
   install_github("awaptools", "swish-climate-impact-assessment")
-  require(awaptools)
   DatesUnavailable
+  
 #+end_src
 
 #+name:DatesUnavailable
