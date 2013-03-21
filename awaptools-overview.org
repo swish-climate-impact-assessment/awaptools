@@ -1,0 +1,670 @@
+#+TITLE:awaptools 
+#+AUTHOR: Ivan Hanigan
+#+email: ivan.hanigan@anu.edu.au
+#+LaTeX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [a4paper]
+#+LATEX: \tableofcontents
+-----
+
+** COMMENT DEPRECATED IN FAVOUR OF PACKAGE func
+*** core libs
+#+begin_src R  :session *R* :exports none :eval no :tangle lib/func.r
+  # Project: AWAP_GRIDS
+  # Author: ivanhanigan
+  # Maintainer: Who to complain to <ivan.hanigan@gmail.com>
+  
+  # Functions for the project
+  if (!require(plyr)) install.packages('plyr', repos='http://cran.csiro.au'); require(plyr)
+  if(!require(swishdbtools)){
+  if(length(grep('linux',sessionInfo()[[1]]$os)) == 1)
+  {
+    os <- 'linux'
+  
+  print('Downloading the swishdbtools package and install it.')
+   download.file('http://swish-climate-impact-assessment.github.com/tools/swishdbtools/swishdbtools_1.1_R_x86_64-pc-linux-gnu.tar.gz', '~/swishdbtools_1.1_R_x86_64-pc-linux-gnu.tar.gz', mode = 'wb')
+  # for instance
+  install.packages("~/swishdbtools_1.1_R_x86_64-pc-linux-gnu.tar.gz", repos = NULL, type = "source");
+  
+  } else {
+      os <- 'windows'
+  
+  print('Downloading the swishdbtools package and install it.')
+   download.file('http://swish-climate-impact-assessment.github.com/tools/swishdbtools/swishdbtools_1.1.zip', '~/swishdbtools_1.1.zip', mode = 'wb')
+  # for instance
+  install.packages("~/swishdbtools_1.1.zip", repos = NULL);
+  
+  }
+  }
+  require(swishdbtools)
+  if(!require(raster)) install.packages('raster', repos='http://cran.csiro.au');require(raster)
+  if(!require(fgui)) install.packages('fgui', repos='http://cran.csiro.au');require(fgui)
+  if(!require(rgdal)) install.packages('rgdal', repos='http://cran.csiro.au');require(rgdal)
+  
+  ####
+  # MAKE SURE YOU HAVE THE CORE LIBS
+  if (!require(lubridate)) install.packages('lubridate', repos='http://cran.csiro.au'); require(lubridate)
+  if (!require(reshape)) install.packages('reshape', repos='http://cran.csiro.au'); require(reshape)
+  if (!require(plyr)) install.packages('plyr', repos='http://cran.csiro.au'); require(plyr)
+  if (!require(ggplot2)) install.packages('ggplot2', repos='http://cran.csiro.au'); require(ggplot2)
+  
+#+end_src
+*** DatesUnavaliable
+#+name:DatesUnavailable
+#+begin_src R :session *shell* :tangle lib/DatesUnavailable.R :exports none :eval no
+###########################################################################
+# newnode: DatesUnavailable
+
+# get the list of dates between the start and end dates that is not found in the database 
+DatesUnavaliable <- function (dataBaseConnection, variableName, startDate, endDate) 
+{
+  ch <- dataBaseConnection
+  measure_i <- variableName
+  start_at <- startDate
+  end_at <- endDate
+  
+  datelist_full <- as.data.frame(seq(as.Date(start_at),
+                                     as.Date(end_at), 1))
+  names(datelist_full) <- 'date'
+  
+  
+  tbls <- pgListTables(conn=ch, schema='awap_grids', pattern = measure_i)
+  #     pattern=paste(measure_i,"_", gsub("-","",sdate), sep=""))
+  pattern_x <- paste(measure_i,"_",sep="")
+  tbls$date <- paste(
+    substr(gsub(pattern_x,"",tbls[,1]),1,4),
+    substr(gsub(pattern_x,"",tbls[,1]),5,6),
+    substr(gsub(pattern_x,"",tbls[,1]),7,8),
+    sep="-")
+  tbls$date <- as.Date(tbls$date)
+  datelist <-  which(datelist_full$date %in% tbls$date)
+  
+  
+  if(length(datelist) == 0)
+  {
+    datelist <- datelist_full[,]
+  } else {
+    datelist <- datelist_full[-datelist,]
+  }
+  
+  
+}
+
+
+#+end_src
+
+*** Get Data 
+#+begin_src R :session *R* :tangle lib/get_data.r :exports none :eval no
+# newnode get_data
+# authors: Joseph Guillaume
+# downloads from http://www.bom.gov.au/jsp/awap/
+get_data<-function(variable,measure,timestep,startdate,enddate){
+  url="http://www.bom.gov.au/web03/ncc/www/awap/{variable}/{measure}/{timestep}/grid/0.05/history/nat/{startdate}{enddate}.grid.Z"
+  url=gsub("{variable}",variable,url,fixed=TRUE)
+  url=gsub("{measure}",measure,url,fixed=TRUE)
+  url=gsub("{timestep}",timestep,url,fixed=TRUE)
+  url=gsub("{startdate}",startdate,url,fixed=TRUE)
+  url=gsub("{enddate}",enddate,url,fixed=TRUE)
+
+  try(download.file(url,sprintf("%s_%s%s.grid.Z",measure,startdate,enddate),mode="wb"))
+  }
+#+end_src
+*** Get Data Range
+#+begin_src R :session *R* :tangle lib/get_data_range.r :exports none :eval no
+# newnode get_data_range
+# authors: Joseph Guillaume and Francis Markham
+# downloads from http://www.bom.gov.au/jsp/awap/
+  
+get_data_range<-function(variable,measure,timestep,startdate,enddate){
+  if (timestep == "daily"){
+    thisdate<-startdate
+    while (thisdate<=enddate){
+      get_data(variable,measure,timestep,format(as.POSIXct(thisdate),"%Y%m%d"),format(as.POSIXct(thisdate),"%Y%m%d"))
+      thisdate<-thisdate+as.double(as.difftime(1,units="days"),units="secs")
+    }
+  } else if (timestep == "month"){
+    # Make sure that we go from begin of the month
+    startdate <- as.POSIXlt(startdate)
+    startdate$mday <- 1
+    # Find the first and last day of each month overlapping our range
+    data.period.start <- seq(as.Date(startdate), as.Date(enddate), by = 'month')
+    data.period.end <- as.Date(sapply(data.period.start, FUN=function(x){as.character(seq(x, x + 40, by = 'month')[2] - 1)}))
+    # Download them
+    for (i in 1:length(data.period.start)){
+      get_data(variable,measure,timestep,format(as.POSIXct(data.period.start[i]),"%Y%m%d"),format(as.POSIXct(data.period.end[i]),"%Y%m%d"))
+    }
+   
+} else {
+    stop("Unsupported timestep, only 'daily' and 'month' are currently supported")
+  }
+}
+#+end_src
+
+*** variableslist
+#+name:variableslist
+#+begin_src R :session *R* :tangle lib/variableslist.r :exports none :eval no
+  ###########################################################################
+  # newnode: variableslist
+  variableslist<-"variable,measure,timestep
+  rainfall,totals,daily
+  temperature,maxave,daily
+  temperature,minave,daily
+  vprp,vprph09,daily
+  vprp,vprph15,daily
+  solar,solarave,daily
+  ndvi,ndviave,month
+  "
+  variableslist <- read.csv(textConnection(variableslist))
+    
+#+end_src
+
+*** ProcessFunctions
+#+name:ProcessFunctions.R
+#+begin_src R :session *R* :tangle lib/ProcessFunctions.R :exports none :eval no
+  ################################################################
+  # name:ProcessFunctions.R
+  
+  RunProcess = function(executable, arguments)
+  {
+    command = paste(sep="", "\"", executable,  "\" ", arguments);
+    
+    print (command)
+    
+    exitCode = system(command, intern = FALSE, ignore.stdout = FALSE, ignore.stderr = FALSE, wait = TRUE, input = NULL
+                      , show.output.on.console = TRUE
+                      #, minimized = FALSE
+                      , invisible = FALSE
+    );
+    if(exitCode != 0)
+    {
+      stop("Process returned error");
+    }
+    return (exitCode)
+  }
+  
+  
+  RunViaBat = function(executableFileName, arguments)
+  {
+    command = paste(sep="", "\"", executableFileName,  "\" ", arguments);
+    sink("C:\\Users\\u5265691\\Desktop\\ThingToRun.bat")
+    cat(command)
+    sink()
+    
+    exitCode = system("C:\\Users\\u5265691\\Desktop\\ThingToRun.bat")
+    if(exitCode != 0)
+    {
+      stop("Process returned error");
+    }
+    return (exitCode)
+  }
+  
+#+end_src
+
+*** ZipFunctions
+#+name:ZipFunctions.R
+#+begin_src R :session *R* :tangle lib/ZipFunctions.R :exports none :eval no
+  ################################################################
+  # name:ZipFunctions.R
+  uncompress_linux <- function(filename)
+    {
+      print(filename)
+      system(sprintf('uncompress %s',filename))
+    }
+  
+  # tries to find 7 zip exe
+  ExecutableFileName7Zip <- function()
+  {
+    executableName <- "C:\\Program Files\\7-Zip\\7z.exe"
+  
+    if(file.exists(executableName))
+    {
+      return (executableName)
+    }
+  
+    #other executable file names and ideas go here ...
+    stop("failed to find 7zip")
+  }
+  
+  # simple function to extract 7zip file
+  # need to have 7zip installed
+  Decompress7Zip <- function(zipFileName, outputDirectory, delete)
+  {
+    executableName <- ExecutableFileName7Zip()
+  
+  #   fileName = GetFileName(zipFileName)
+  #   fileName = PathCombine(outputDirectory, fileName)
+  
+  
+  #   if(file.exists(fileName))
+  #   {
+  #     unlink(zipFileName);
+  #   }
+  
+    arguments <- paste(sep="",
+                      "e ",
+                      "\"", zipFileName, "\" ",
+                      "\"-o", outputDirectory, "\" ",
+      "")
+  
+    print( arguments)
+  
+    RunProcess(executableName, arguments)
+  
+    if(delete)
+    {
+      unlink(zipFileName);
+    }
+  }
+  
+  #test
+  # Decompress7Zip("D:\\Development\\Awap Work\\2013010820130108.grid.Z", "D:\\Development\\Awap Work\\", TRUE)
+  
+#+end_src
+
+*** raster_aggregate
+#+name:raster_aggregate
+#+begin_src R :session *R* :tangle lib/raster_aggregate.r :exports none :eval no
+  ################################################################
+  # name:raster_aggregate
+  raster_aggregate <- function(filename, aggregationfactor, delete = TRUE)
+  {
+    r <- raster(filename)
+    r <- aggregate(r, fact = aggregationfactor, fun = mean)
+    writeRaster(r, gsub('.grid','',fname), format="GTiff",
+  overwrite = TRUE)
+    if(delete)
+      {
+        file.remove(filename)
+      }
+  }
+  
+#+end_src
+
+*** COMMENT load2postgres_raster
+#+name:load2postgres_raster
+#+begin_src R :session *R* :tangle no :exports none :eval no
+  ################################################################
+  # name:load2postgres_raster
+  load2postgres_raster <- function(filename, remove = TRUE)
+  {
+    outname <- gsub('.tif',"", filename)
+    outname <- substr(outname, 1, nchar(outname) - 8)
+    if(os == 'linux')
+    {
+     system(
+    #        cat(
+            paste(pgisutils,"raster2pgsql -s 4283 -I -C -M ",filename," -F awap_grids.",outname," > ",outname,".sql", sep="")
+            )
+  
+     system(
+    #        cat(
+            paste("psql -h 115.146.84.135 -U gislibrary -d ewedb -f ",outname,".sql",
+              sep = ""))
+    } else {
+      sink('raster2sql.bat')
+      cat(paste(pgisutils,"raster2pgsql\" -s 4283 -I -C -M ",filename," -F awap_grids.",outname," > ",outname,".sql\n",sep=""))
+  
+      cat(
+      paste(pgutils,"psql\" -h 115.146.84.135 -U gislibrary -d ewedb -f ",outname,".sql",
+      sep = "")
+        )
+      sink()
+      system('raster2sql.bat')
+      file.remove('raster2sql.bat')
+    }
+  
+    if(remove)
+      {
+        file.remove(filename)
+        file.remove(paste(outname, '.sql', sep =""))
+      }
+  }
+  
+#+end_src
+
+*** COMMENT deprecated pgListTables, moved to swishdbtools
+#+name:pgListTables
+#+begin_src R :session *R* :tangle no :exports none :eval no
+  ################################################################
+  # name:pgListTables
+  pgListTables <- function(conn, schema, pattern = NA)
+  {
+    tables <- dbGetQuery(conn, 'select   c.relname, nspname
+                         FROM pg_catalog.pg_class c
+                         LEFT JOIN pg_catalog.pg_namespace n
+                         ON n.oid = c.relnamespace
+                         where c.relkind IN (\'r\',\'\') ')
+    tables <- tables[grep(schema,tables$nspname),]
+    if(!is.na(pattern)) tables <- tables[grep(pattern, tables$relname),]
+    tables <- tables[order(tables$relname),]
+    return(tables)
+  }
+#+end_src
+*** COMMENT pgListTables
+#+name:pgListTables
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:pgListTables
+pgListTables <- function(conn, schema, pattern = NA)
+{
+  tables <- dbGetQuery(conn, "select   c.relname, nspname
+                       FROM pg_catalog.pg_class c
+                       LEFT JOIN pg_catalog.pg_namespace n
+                       ON n.oid = c.relnamespace
+                       where c.relkind IN ('r','','v') ")
+  tables <- tables[grep(schema,tables$nspname),]
+  if(!is.na(pattern)) tables <- tables[grep(pattern, tables$relname),]
+  tables <- tables[order(tables$relname),]
+  return(tables)
+}
+#+end_src
+
+*** pgListTables-test dates
+#+name:pgListTables-test
+#+begin_src R :session *R* :tangle tests/test-pgListTables.r :exports none :eval no
+  ################################################################
+  # name:pgListTables-test
+  require(ProjectTemplate)
+  load.project()
+  
+  require(swishdbtools)
+  p <- getPassword(remote=T)
+  ch <- connect2postgres(h = '115.146.84.135', db = 'ewedb', user=
+                         'gislibrary', p=p)
+  measure_i <- 'vprph15'
+  tbls <- pgListTables(conn=ch, schema='awap_grids', pattern=measure_i)
+  tbls$date <- paste(substr(gsub(paste(measure_i,"_",sep=""),"",tbls[,1]),1,4),
+          substr(gsub(paste(measure_i,"_",sep=""),"",tbls[,1]),5,6),
+          substr(gsub(paste(measure_i,"_",sep=""),"",tbls[,1]),7,8),
+          sep="-")
+  tbls$date <- as.Date(tbls$date)
+  head(tbls)
+  tbls <- tbls[tbls$date > as.Date('1912-01-01'),]
+  plot(tbls$date, rep(1,nrow(tbls)), type = 'h')
+  tbls[tbls$date < as.Date('1999-01-01'),]
+  tbls[tbls$date >= as.Date('2006-07-01') & tbls$date < as.Date('2007-01-01'),]
+  tbls[tbls$date >= as.Date('2004-01-01') & tbls$date < as.Date('2005-01-01'),]
+  
+#+end_src
+*** sqlquery_oracle
+#+name:sqlquery
+#+begin_src R :session *R* :tangle lib/sqlquery.r :exports none :eval no
+  ################################################################
+  # name:aggregate_postgres
+  sqlquery <- function(channel, dimensions, operation,
+                       variable, variablename=NA, into, append = FALSE,
+                       tablename, where, group_by_dimensions=NA,
+                       having=NA,
+                       grant = NA, force = FALSE,
+                       print = FALSE)
+  {
+  
+    exists <- try(dbGetQuery(channel,
+                             paste("select * from",into,"limit 1")))
+    if(!force & length(exists) > 0 & append == FALSE)
+                             stop("Table exists. Force Drop or Insert Into?")
+    if(force & length(exists) > 0) dbGetQuery(channel,
+                             paste("drop table ",into))
+    if(length(exists) > 0 & append == TRUE)
+      {
+        sqlquery <- paste("INSERT INTO ",into," (",
+                             paste(names(exists), collapse=',', sep='') ,")\n",
+                          "select ", dimensions,
+                          sep = ""
+                          )
+      } else {
+        sqlquery <- paste("select ", dimensions, sep = "")
+      }
+    if(!is.na(operation))
+    {
+    sqlquery <- paste(sqlquery, ", ", operation, "(",variable,") as ",
+      ifelse(is.na(variablename), variable,
+      variablename), '\n', sep = "")
+    }
+    if(append == FALSE){
+      sqlquery <- paste(sqlquery, "into ", into ,"\n", sep = "")
+    }
+    sqlquery <- paste(sqlquery, "from ", tablename ,"\n", sep = "")
+    if(!is.na(where))
+    {
+    sqlquery <- paste(sqlquery, "where ", where, "\n", sep = "")
+    }
+    if(group_by_dimensions == TRUE)
+    {
+    sqlquery <- paste(sqlquery, "group by ",dimensions, "\n", sep = "")
+    }
+  #  cat(sqlquery)
+  
+  
+  
+    ## sqlquery <-  paste("select ", dimensions,
+    ##                ", ",operation,"(",variables,") as ",variables,
+    ##                operation, "
+    ##                into ", into ,"
+    ##                from ",tablename," t1
+    ##                group by ",dimensions,
+    ##                sep="")
+    if(print) {
+      cat(sqlquery)
+    } else {
+      dbSendQuery(channel, sqlquery)
+    }
+  
+  }
+#+end_src
+*** sqlquery_postgres
+#+name:sqlquery
+#+begin_src R :session *R* :tangle lib/sqlquery_postgres.r :exports none :eval no
+  ################################################################
+  # name:aggregate_postgres
+    
+  sqlquery_postgres <- function(channel, dimensions, operation,
+                       variable, variablename=NA, into_schema = 'public',
+                       into_table, append = FALSE,
+                       from_schema = 'public', from_table, where=NA,
+                       group_by_dimensions=NA,
+                       having=NA,
+                       grant = NA, force = FALSE,
+                       print = FALSE)
+  {
+    # assume ch exists
+    exists <- pgListTables(channel, into_schema, into_table)
+    if(!force & nrow(exists) > 0 & append == FALSE)
+      {
+        stop("Table exists. Force Drop or Insert Into?")
+      }
+    
+    if(force & nrow(exists) > 0)
+      {
+        dbGetQuery(channel, paste("drop table ",into_schema,".",into_table,sep=""))
+      }
+    
+    if(!force & nrow(exists) >0)
+      {
+        existing_table <- dbGetQuery(channel,
+                                     paste('select * from ',
+                                           into_schema,'.',
+                                           into_table,' limit 1',sep=''
+                                           )
+                                     )
+      }
+    
+    if(nrow(exists) > 0 & append == TRUE)
+      {
+        sqlquery <- paste("INSERT INTO ",into_schema,".",into_table," (",
+                             paste(names(existing_table), collapse=',', sep='') ,")\n",
+                          "select ", dimensions,
+                          sep = ""
+                          )
+      } else {
+        sqlquery <- paste("select ", dimensions, "", sep = "")
+      }
+    
+    if(!is.na(operation))
+      {
+        sqlquery <- paste(sqlquery, ", ", operation, "(",variable,") as ",
+          ifelse(is.na(variablename), variable,
+          variablename), '\n', sep = "")
+      } else {
+        sqlquery <- paste(sqlquery, ", ",variable," as ",
+                          ifelse(is.na(variablename),variable,variablename),
+                          "\n", sep="")
+      }
+    
+    # this is when append is true but the table doesnt exist yet
+    if(nrow(exists) == 0 & append == TRUE)
+      {
+        sqlquery <- paste(sqlquery, "into ",
+                          into_schema,".",into_table,"\n", sep = ""
+                          )
+      }
+    
+    # otherwise append is false and the table just needs to be created
+    if(append == FALSE)
+      {
+        sqlquery <- paste(sqlquery, "into ",
+                          into_schema,".",into_table,"\n", sep = ""
+                          )
+      }
+    
+    sqlquery <- paste(sqlquery, "from ", from_schema,".",from_table ,"\n", sep = "")
+    
+    if(!is.na(where))
+      {
+        sqlquery <- paste(sqlquery, "where ", where, "\n", sep = "")
+      }
+    
+    if(group_by_dimensions == TRUE)
+      {
+        sqlquery <- paste(sqlquery, "group by ",
+                          dimensions, "\n",
+                          sep = ""
+                          )
+      }
+  #  cat(sqlquery)
+    
+    
+    
+    ## sqlquery <-  paste("select ", dimensions,
+    ##                ", ",operation,"(",variables,") as ",variables,
+    ##                operation, "
+    ##                into ", into ,"
+    ##                from ",tablename," t1
+    ##                group by ",dimensions,
+    ##                sep="")
+    if(print) {
+      cat(sqlquery)
+    } else {
+      dbSendQuery(channel, sqlquery)
+    }
+    
+  }
+    
+#+end_src
+*** sqlquery-test
+#+name:sqlquery-test
+#+begin_src R :session *R* :tangle tests/test-sqlquery.r :exports none :eval no
+  ################################################################
+  # name:sqlquery-test
+  require(ProjectTemplate)
+  load.project()
+  
+  require(swishdbtools)
+  ch <- connect2postgres(hostip='115.146.84.135', db='ewedb', user='gislibrary', p='gislibrary')
+  sqlquery_postgres(
+      channel = ch,
+      append = TRUE,
+      force = FALSE,
+      print = FALSE,
+      dimensions = 'stnum, date',
+      variable = 'gv',
+      variablename = NA,
+      into_schema = 'public',
+      into_table = 'awapmaxave_qc2',
+      from_schema = 'public',
+      from_table = 'awapmaxave_qc',
+      operation = NA,
+      where = "date = '2013-01-02' and stnum = 70351",
+      group_by_dimensions = FALSE,
+      having = NA,
+      grant = 'public_group'
+      )
+  
+  dbGetQuery(ch, 'select * from awapmaxave_qc2 limit 10')
+  # for dev work
+  
+  ##     channel = ch
+  ##     dimensions = 'stnum, date'
+  ##     variable = 'gv'
+  ##     variablename = NA
+  ##     into_schema = 'public'
+  ##     into_table = 'awapmaxave_qc2'
+  ##     append = TRUE
+  ##     grant = 'public_group'
+  ##     print = TRUE
+  ##     from_schema = 'public'
+  ##     from_table = 'awapmaxave_qc'
+  ##     operation = NA
+  ##     force = FALSE
+  ##     where = "date = '2007-01-01'"
+  ##     group_by_dimensions = FALSE
+  ##     having = NA
+  
+#+end_src
+*** test2
+#+name:sqlquery_postgres-test2
+#+begin_src R :session *R* :tangle tests/test-sqlquery_postgres2.r :exports none :eval no
+################################################################
+# name:sqlquery_postgres-test2
+
+
+
+  
+  
+    require(ProjectTemplate)
+    load.project()
+  
+    require(swishdbtools)
+    ch <- connect2postgres(hostip='115.146.84.135', db='ewedb', user='gislibrary', p='gislibrary')
+  
+    variable_j <- "maxave"
+    date_i <- '2012-01-01'
+  #  debug(sqlquery)
+    sqlquery(channel = ch,
+      dimensions = paste("stnum, cast('",date_i,"' as date) as date",sep=""),
+      variable = 'rt.rast, pt.the_geom',
+      variablename = 'gv',
+      into = 'awapmaxave_qc',
+      append = FALSE,
+      grant = 'public_group',
+      print = FALSE,
+      tablename = paste('awap_grids.',variable_j,'_',gsub('-','',date_i),' rt,\n weather_bom.combstats pt',sep=''),
+      operation = "ST_Value",
+      force = TRUE,
+      where = "ST_Intersects(rast, the_geom)",
+      group_by_dimensions = FALSE,
+      having = NA)
+  #  undebug(sqlquery)
+  for(date_i in seq(as.Date('2012-01-21'), as.Date('2013-01-20'), 1))
+    {
+     date_i <- as.Date(date_i, origin = '1970-01-01')
+     date_i <- as.character(date_i)
+     print(date_i)
+  
+  #  debug(sqlquery)
+    sqlquery(channel = ch,
+      dimensions = paste("stnum, cast('",date_i,"' as date) as date",sep=""),
+      variable = 'rt.rast, pt.the_geom',
+      variablename = 'gv',
+      into = 'awapmaxave_qc',
+      append = TRUE,
+      grant = 'public_group',
+      print = FALSE,
+      tablename = paste('awap_grids.',variable_j,'_',gsub('-','',date_i),' rt,\n weather_bom.combstats pt',sep=''),
+      operation = "ST_Value",
+      force = FALSE,
+      where = "ST_Intersects(rast, the_geom)",
+      group_by_dimensions = FALSE,
+      having = NA)
+    }
+  
+#+end_src
