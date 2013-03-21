@@ -6,8 +6,8 @@
 #+LATEX: \tableofcontents
 -----
 
-**  PACKAGE func
-*** core libs
+*  PACKAGE 
+** core libs
 #+begin_src R  :session *R* :exports none :eval no :tangle R/func.r
   # Project: AWAP_GRIDS
   # Author: ivanhanigan
@@ -48,14 +48,25 @@
   if (!require(ggplot2)) install.packages('ggplot2', repos='http://cran.csiro.au'); require(ggplot2)
   
 #+end_src
-*** DatesUnavaliable
+** DatesUnavaliable
+*** COMMENT test-DatesUnavailable
+#+name:DatesUnavailable
+#+begin_src R :session *R* :tangle no :exports none :eval no
+  ################################################################
+  # name:DatesUnavailable
+  require(devtools)
+  install_github("awaptools", "swish-climate-impact-assessment")
+  require(awaptools)
+  DatesUnavailable
+#+end_src
+
 #+name:DatesUnavailable
 #+begin_src R :session *shell* :tangle R/DatesUnavailable.R :exports none :eval no
 ###########################################################################
 # newnode: DatesUnavailable
 
 # get the list of dates between the start and end dates that is not found in the database 
-DatesUnavaliable <- function (dataBaseConnection, variableName, startDate, endDate) 
+DatesUnavailable <- function (dataBaseConnection, variableName, startDate, endDate) 
 {
   ch <- dataBaseConnection
   measure_i <- variableName
@@ -92,7 +103,7 @@ DatesUnavaliable <- function (dataBaseConnection, variableName, startDate, endDa
 
 #+end_src
 
-*** Get Data 
+** Get Data 
 #+begin_src R :session *R* :tangle R/get_data.r :exports none :eval no
 # newnode get_data
 # authors: Joseph Guillaume
@@ -108,7 +119,7 @@ get_data<-function(variable,measure,timestep,startdate,enddate){
   try(download.file(url,sprintf("%s_%s%s.grid.Z",measure,startdate,enddate),mode="wb"))
   }
 #+end_src
-*** Get Data Range
+** Get Data Range
 #+begin_src R :session *R* :tangle R/get_data_range.r :exports none :eval no
 # newnode get_data_range
 # authors: Joseph Guillaume and Francis Markham
@@ -139,7 +150,7 @@ get_data_range<-function(variable,measure,timestep,startdate,enddate){
 }
 #+end_src
 
-*** variableslist
+** variableslist
 #+name:variableslist
 #+begin_src R :session *R* :tangle R/variableslist.r :exports none :eval no
   #####################################################################
@@ -160,7 +171,7 @@ get_data_range<-function(variable,measure,timestep,startdate,enddate){
   
 #+end_src
 
-*** ProcessFunctions
+** ProcessFunctions
 #+name:ProcessFunctions.R
 #+begin_src R :session *R* :tangle R/ProcessFunctions.R :exports none :eval no
   ################################################################
@@ -202,7 +213,7 @@ get_data_range<-function(variable,measure,timestep,startdate,enddate){
   
 #+end_src
 
-*** ZipFunctions
+** ZipFunctions
 #+name:ZipFunctions.R
 #+begin_src R :session *R* :tangle R/ZipFunctions.R :exports none :eval no
   ################################################################
@@ -263,7 +274,7 @@ get_data_range<-function(variable,measure,timestep,startdate,enddate){
   
 #+end_src
 
-*** raster_aggregate
+** raster_aggregate
 #+name:raster_aggregate
 #+begin_src R :session *R* :tangle R/raster_aggregate.r :exports none :eval no
   ################################################################
@@ -282,7 +293,7 @@ get_data_range<-function(variable,measure,timestep,startdate,enddate){
   
 #+end_src
 
-*** COMMENT load2postgres_raster
+** COMMENT load2postgres_raster
 #+name:load2postgres_raster
 #+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
@@ -324,7 +335,7 @@ get_data_range<-function(variable,measure,timestep,startdate,enddate){
   
 #+end_src
 
-*** COMMENT deprecated pgListTables, moved to swishdbtools
+** COMMENT deprecated pgListTables, moved to swishdbtools
 #+name:pgListTables
 #+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
@@ -342,7 +353,7 @@ get_data_range<-function(variable,measure,timestep,startdate,enddate){
     return(tables)
   }
 #+end_src
-*** COMMENT pgListTables
+** COMMENT pgListTables
 #+name:pgListTables
 #+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
@@ -361,7 +372,7 @@ pgListTables <- function(conn, schema, pattern = NA)
 }
 #+end_src
 
-*** COMMENT pgListTables-test dates
+** COMMENT pgListTables-test dates
 #+name:pgListTables-test
 #+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
@@ -388,7 +399,7 @@ pgListTables <- function(conn, schema, pattern = NA)
   tbls[tbls$date >= as.Date('2004-01-01') & tbls$date < as.Date('2005-01-01'),]
   
 #+end_src
-*** sqlquery_oracle
+** sqlquery_oracle
 #+name:sqlquery
 #+begin_src R :session *R* :tangle R/sqlquery.r :exports none :eval no
   ################################################################
@@ -454,7 +465,7 @@ pgListTables <- function(conn, schema, pattern = NA)
   
   }
 #+end_src
-*** sqlquery_postgres
+** sqlquery_postgres
 #+name:sqlquery
 #+begin_src R :session *R* :tangle R/sqlquery_postgres.r :exports none :eval no
   ################################################################
@@ -563,7 +574,7 @@ pgListTables <- function(conn, schema, pattern = NA)
   }
     
 #+end_src
-*** COMMENT sqlquery-test
+** COMMENT sqlquery-test
 #+name:sqlquery-test
 #+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
@@ -613,7 +624,7 @@ pgListTables <- function(conn, schema, pattern = NA)
   ##     having = NA
   
 #+end_src
-*** COMMENT test2
+** COMMENT test2
 #+name:sqlquery_postgres-test2
 #+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################

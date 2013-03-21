@@ -3,7 +3,7 @@
 # newnode: DatesUnavailable
 
 # get the list of dates between the start and end dates that is not found in the database 
-DatesUnavaliable <- function (dataBaseConnection, variableName, startDate, endDate) 
+DatesUnavailable <- function (dataBaseConnection, variableName, startDate, endDate) 
 {
   ch <- dataBaseConnection
   measure_i <- variableName
