@@ -30,6 +30,6 @@ unzip_monthly <- function(filename, aggregation_factor = 1)
 
      raster_aggregate(filename = gsub('.Z$','',fname),
        aggregationfactor = aggregation_factor, delete = TRUE)
-     }
+     
 
   }

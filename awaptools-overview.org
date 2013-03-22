@@ -807,7 +807,7 @@ pgListTables <- function(conn, schema, pattern = NA)
   
        raster_aggregate(filename = gsub('.Z$','',fname),
          aggregationfactor = aggregation_factor, delete = TRUE)
-       }
+       
   
     }
   
