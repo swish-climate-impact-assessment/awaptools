@@ -7,27 +7,29 @@
 ## install_github("awaptools", "swish-climate-impact-assessment")
 ## require(awaptools)
 ## require(swishdbtools)
-unzip_monthly <- function(aggregation_factor = 1, outputDirectory)
+unzip_monthly <- function(filename, aggregation_factor = 1)
   {
-  workdir <- getwd()
-  setwd(outputDirectory)
+    if(file.exists(filename))
+      {
+        fname <- filename
+      } else {
+        stop("file doesn't exist")
+      }
   require(raster)
   require(swishdbtools)
   os <- LinuxOperatingSystem()
 
 
-  filelist <- dir(pattern = "grid.Z$")
-  for(fname in filelist)
-    {
-        if(os)
-          {
-            uncompress_linux(filename = fname)
-          } else {
-            Decompress7Zip(zipFileName= fname, outputDirectory=getwd(), TRUE)
-          }
 
-        raster_aggregate(filename = gsub('.Z$','',fname),
-          aggregationfactor = aggregation_factor, delete = TRUE)
+   if(os)
+     {
+       uncompress_linux(filename = fname)
+     } else {
+       Decompress7Zip(zipFileName= fname, outputDirectory=getwd(), TRUE)
      }
-   setwd(workdir)
+
+     raster_aggregate(filename = gsub('.Z$','',fname),
+       aggregationfactor = aggregation_factor, delete = TRUE)
+     }
+
   }
