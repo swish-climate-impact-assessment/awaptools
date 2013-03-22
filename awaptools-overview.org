@@ -141,7 +141,7 @@ get_data<-function(variable,measure,timestep,startdate,enddate){
                  )
   
 #+end_src
-
+*** get_data_range-code
 #+begin_src R :session *R* :tangle R/get_data_range.r :exports none :eval no
   # newnode get_data_range
   # authors: Joseph Guillaume and Francis Markham
@@ -194,7 +194,7 @@ get_data<-function(variable,measure,timestep,startdate,enddate){
   vprp,vprph15,daily
   solar,solarave,daily
   ndvi,ndviave,month"
-    variablesList <- read.csv(textConnection(variablesList))
+    variablesList <- read.csv(textConnection(variablesList), stringsAsFactors = F)
     return(variablesList)
     }
   
