@@ -1,7 +1,7 @@
 
 ################################################################
 # name:check_duplicates
-check_duplicates <- function(conn, measures = c("vprph09","vprph15"), dates)
+check_duplicates <- function(conn, measures = c("vprph09","vprph15"), measure_name = "vprph", dates)
     {
   #suspicious_dates <- list()
   #measures <- c("maxave","minave", "solarave","totals",
@@ -45,7 +45,7 @@ check_duplicates <- function(conn, measures = c("vprph09","vprph15"), dates)
         {
           #counter <- length(suspicious_dates)
           #suspicious_dates[[counter + 1]] <- rastername
-          sink('sus_dates.csv', append = T)
+          sink(paste("sus_dates_",measure_name,".csv", sep = ""), append = T)
           cat(rastername)
           cat('\n')
           sink()
