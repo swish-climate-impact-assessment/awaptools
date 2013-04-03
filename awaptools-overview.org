@@ -54,7 +54,7 @@
   ################################################################
   # name:check_duplicates
   check_duplicates <- function(conn, measures = c("vprph09","vprph15"), measure_name = "vprph", dates)
-      {
+    {
     #suspicious_dates <- list()
     #measures <- c("maxave","minave", "solarave","totals",
   
