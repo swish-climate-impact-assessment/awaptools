@@ -2,7 +2,7 @@
 ################################################################
 # name:check_duplicates
 check_duplicates <- function(conn, measures = c("vprph09","vprph15"), measure_name = "vprph", dates)
-    {
+  {
   #suspicious_dates <- list()
   #measures <- c("maxave","minave", "solarave","totals",
 
@@ -18,8 +18,8 @@ check_duplicates <- function(conn, measures = c("vprph09","vprph15"), measure_na
         rastername1 <- paste(measures[1], "_", date_i, sep ="")
         rastername2 <- paste(measures[2], "_", date_i, sep ="")
         tableExists <- pgListTables(ch, schema="awap_grids",
-    pattern=rastername1)
-        tableExists2 <- pgListTables(ch, schema="awap_grids", pattern=rastername2)
+    table=rastername1, match = TRUE)
+        tableExists2 <- pgListTables(ch, schema="awap_grids", table=rastername2, match = TRUE)
         if(nrow(tableExists) == 0 | nrow(tableExists2) == 0)
         {
           next

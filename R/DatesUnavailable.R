@@ -15,7 +15,7 @@ DatesUnavailable <- function (dataBaseConnection, variableName, startDate, endDa
   names(datelist_full) <- 'date'
   
   
-  tbls <- pgListTables(conn=ch, schema='awap_grids', pattern = measure_i)
+  tbls <- pgListTables(conn=ch, schema='awap_grids', table = measure_i, match = FALSE)
   #     pattern=paste(measure_i,"_", gsub("-","",sdate), sep=""))
   pattern_x <- paste(measure_i,"_",sep="")
   tbls$date <- paste(
