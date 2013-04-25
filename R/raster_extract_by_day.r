@@ -1,10 +1,11 @@
 
 ################################################################
 # name:raster_extract_by_day
-raster_extract_by_day  <- function(ch, startdate, enddate, variables,
+raster_extract_by_day  <- function(ch, startdate, enddate,
                                    schemaName = "weather_sla",
                                    tableName = "weather_nswsla06",
-                                   pointsLayer = "abs_sla.nswsla06_points"
+                                   pointsLayer = "abs_sla.nswsla06_points",
+                                   measures = c("maxave", "minave")
                                    )
 {
    
@@ -35,9 +36,9 @@ raster_extract_by_day  <- function(ch, startdate, enddate, variables,
       measure <- measures[i]
       #print(measure)
       rastername <- paste("awap_grids.", measure, "_", date_i, sep ="")
-      tableExists <- pgListTables(ch, schema="awap_grids", pattern=paste(measure, "_", date_i, sep =""))
-      if(nrow(tableExists) > 0)
-      {
+      #tableExists <- pgListTables(ch, schema="awap_grids", table=paste(measure, "_", date_i, sep =""))
+      #if(nrow(tableExists) > 0)
+      #{
         sql <- postgis_raster_extract(ch, x=rastername, y=pointsLayer, zone_label = "sla_code", value_label = "value")
         sql <- gsub("FROM", "INTO public.tempfoobar\nFROM", sql)
         #cat(sql)  
@@ -61,12 +62,14 @@ raster_extract_by_day  <- function(ch, startdate, enddate, variables,
           dbSendQuery(ch, sql)
         }
         dbSendQuery(ch, "drop table public.tempfoobar")
-      }
+      #}
     }
   }
 }
 
-reformat_awap_data  <- function(tableName = "weather_sla.weather_nswsla06")
+reformat_awap_data  <- function(
+  tableName = "weather_sla.weather_nswsla06"
+  )
   {
 dat <- sql_subset(ch, tableName, eval = T)
 dat$date <- matrix(unlist(strsplit(dat$raster_layer, "_")), ncol = 3, byrow=TRUE)[,3]
@@ -77,4 +80,6 @@ dat$measure <- gsub("grids.","",dat$measure)
 dat <- arrange(dat,  date, measure)
 dat <- as.data.frame(cast(dat, sla_code + date ~ measure, value = "value"))
 dat$date <- as.Date(dat$date)
+return(dat)
   }
+
