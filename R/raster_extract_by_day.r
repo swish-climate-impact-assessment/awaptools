@@ -82,4 +82,3 @@ dat <- as.data.frame(cast(dat, sla_code + date ~ measure, value = "value"))
 dat$date <- as.Date(dat$date)
 return(dat)
   }
-
