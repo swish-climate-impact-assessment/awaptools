@@ -3,8 +3,9 @@
 # name:raster_extract_by_day
 require(swishdbtools)
 require(awaptools)
-startdate <- "2013-04-01" #StartDate
-enddate <- "2013-04-02" #EndDate
+require(reshape)
+startdate <- StartDate
+enddate <- EndDate
 
 #source("D:\\Development\\SydneyThing\\raster_extract_by_day.R")
 
@@ -18,10 +19,10 @@ tempTableName <- gsub("\\\\", "", tempTableName)
 tempTableName <- gsub("/", "", tempTableName)
 
 raster_extract_by_day(ch, startdate, enddate,
-                                   schemaName = "public",
-                                   tableName = tempTableName,
-                                   pointsLayer = "locations",
-                                   measures = c("maxave", "minave")
+                      schemaName = "public",
+                      tableName = tempTableName,
+                      pointsLayer = "locations",
+                      measures = c("maxave", "minave")
 )
 
 schemaTableName <- paste(sep=".", "public", tempTableName)
@@ -33,3 +34,4 @@ data <- reformat_awap_data(
 tempFileName <- tempfile("foo", tmpdir = Sys.getenv("TEMP"), fileext = "")
 write.dta(data, tempFileName)
 tempFileName
+
