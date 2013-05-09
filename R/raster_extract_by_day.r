@@ -84,7 +84,9 @@ reformat_awap_data  <- function(
   dat$measure <- gsub("grids.","",dat$measure)
   
   dat <- arrange(dat,  date, measure)
-  dat <- as.data.frame(cast(dat, address + date ~ measure, value = "value"))
+  dat <- as.data.frame(cast(dat, address + date ~ measure, value = "value",
+                            fun.aggregate= "mean")
+                       )
   dat$date <- as.Date(dat$date)
   return(dat)
 }
