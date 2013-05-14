@@ -55,7 +55,7 @@ sql <- points2geom(
 dbSendQuery(ch, sql)
 tbl
 
-
+# raster extract
 raster_extract_by_day(ch, startdate, enddate,
                                    schemaName = sch
                       ,
@@ -68,10 +68,15 @@ raster_extract_by_day(ch, startdate, enddate,
                       zone_label = "stnum"
 )
 
-schemaTableName <- paste(sep=".", "public", tempTableName)
+schemaTableName <- paste(sep=".", sch, "output_one")
 
+# get result and reformat
+require(swishdbtools)
+require(awaptools)
+require(reshape)
 data <- reformat_awap_data(
-  tableName = schemaTableName
+  tableName = schemaTableName,
+  zone_label = "stnum"
 )
 
 tempFileName <- tempfile("foo", tmpdir = Sys.getenv("TEMP"), fileext = "")
