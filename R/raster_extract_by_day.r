@@ -19,15 +19,27 @@ raster_extract_by_day  <- function(ch, startdate, enddate,
   
   for(date_j in dates)
   {
-    tblExists <- pgListTables(ch,"public", "tempfoobar")
+    #date_j = dates[1]
+    ################################################
+    # ad hoc table "public", "tempfoobar"
+    temporary_table <- swish_temptable()
+    tblExists <- pgListTables(ch,temporary_table$schema, 
+                              temporary_table$table
+                              )
     if(nrow(tblExists) >0)
     {
-      dbSendQuery(ch, "drop table public.tempfoobar")
+      dbSendQuery(ch, sprintf("drop table %s", temporary_table$fullname))
     }
     #date_j <- dates[2]
+    ################################################
+    # the output table to append into, if exists on day one then remove
     if(date_j == dates[1])
     {
-      try(dbSendQuery(ch, sprintf("drop table  %s.%s", schemaName, tableName)))
+      tblExists <- pgListTables(ch,schemaName,tableName)
+      if(nrow(tblExists) >0)
+      {
+      dbSendQuery(ch, sprintf("drop table  %s.%s", schemaName, tableName))
+      }
     }
     
     date_i <- gsub("-","",date_j)
@@ -40,8 +52,16 @@ raster_extract_by_day  <- function(ch, startdate, enddate,
       #tableExists <- pgListTables(ch, schema="awap_grids", table=paste(measure, "_", date_i, sep =""))
       #if(nrow(tableExists) > 0)
       #{
-      sql <- postgis_raster_extract(ch, x=rastername, y=pointsLayer, zone_label = zone_label, value_label = "value")
-      sql <- gsub("FROM", "INTO public.tempfoobar\nFROM", sql)
+      sql <- postgis_raster_extract(ch, x=rastername, 
+                                    y=pointsLayer, 
+                                    zone_label = zone_label, 
+                                    value_label = "value"
+                                    )
+      sql <- gsub("FROM", 
+                  sprintf("INTO %s.%s\nFROM", temporary_table$schema, 
+                          temporary_table$table)
+                  ,
+                  sql)
       #cat(sql)  
       
       dbSendQuery(ch, sql) 
@@ -49,20 +69,21 @@ raster_extract_by_day  <- function(ch, startdate, enddate,
       tblExists <- pgListTables(ch, schemaName, tableName)
       if(nrow(tblExists) == 0)
       {
-        sql <- sql_subset_into(ch, x="public.tempfoobar", into_schema=schemaName,
+        sql <- sql_subset_into(ch, x=temporary_table$fullname, 
+                               into_schema=schemaName,
                                into_table=tableName,eval=F, drop=F
         )
-        #cat(sql)
+        # cat(sql)
         dbSendQuery(ch, sql)      
       } else {
-        sql <- sql_subset(ch, x="public.tempfoobar", eval=F)
+        sql <- sql_subset(ch, x=temporary_table$fullname, eval=F)
         sql <- paste("INSERT INTO ",schemaName,".",tableName," (
           ", zone_label, ", raster_layer, value)
           ",sql,sep ="")
         #cat(sql)
         dbSendQuery(ch, sql)
       }
-      dbSendQuery(ch, "drop table public.tempfoobar")
+      dbSendQuery(ch, sprintf("drop table %s", temporary_table$fullname))
       #}
     }
   }
@@ -84,9 +105,19 @@ reformat_awap_data  <- function(
   dat$measure <- gsub("grids.","",dat$measure)
   
   dat <- arrange(dat,  date, measure)
-  dat <- as.data.frame(cast(dat, address + date ~ measure, value = "value",
-                            fun.aggregate= "mean")
-                       )
+#  dat <- as.data.frame(cast(dat, address + date ~ measure, value = "value",
+#                            fun.aggregate= "mean")
+#                       )
+  dat <- eval(
+    parse(
+      text=sprintf(
+        "as.data.frame(cast(dat, %s + date ~ measure, value = 'value',
+                            fun.aggregate= 'mean')
+                       )", zone_label
+      )
+    )
+  )
+        
   dat$date <- as.Date(dat$date)
   return(dat)
 }
