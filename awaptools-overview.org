@@ -798,15 +798,27 @@ pgListTables <- function(conn, schema, pattern = NA)
     
     for(date_j in dates)
     {
-      tblExists <- pgListTables(ch,"public", "tempfoobar")
+      #date_j = dates[1]
+      ################################################
+      # ad hoc table "public", "tempfoobar"
+      temporary_table <- swish_temptable()
+      tblExists <- pgListTables(ch,temporary_table$schema, 
+                                temporary_table$table
+                                )
       if(nrow(tblExists) >0)
       {
-        dbSendQuery(ch, "drop table public.tempfoobar")
+        dbSendQuery(ch, sprintf("drop table %s", temporary_table$fullname))
       }
       #date_j <- dates[2]
+      ################################################
+      # the output table to append into, if exists on day one then remove
       if(date_j == dates[1])
       {
-        try(dbSendQuery(ch, sprintf("drop table  %s.%s", schemaName, tableName)))
+        tblExists <- pgListTables(ch,schemaName,tableName)
+        if(nrow(tblExists) >0)
+        {
+        dbSendQuery(ch, sprintf("drop table  %s.%s", schemaName, tableName))
+        }
       }
       
       date_i <- gsub("-","",date_j)
@@ -819,8 +831,16 @@ pgListTables <- function(conn, schema, pattern = NA)
         #tableExists <- pgListTables(ch, schema="awap_grids", table=paste(measure, "_", date_i, sep =""))
         #if(nrow(tableExists) > 0)
         #{
-        sql <- postgis_raster_extract(ch, x=rastername, y=pointsLayer, zone_label = zone_label, value_label = "value")
-        sql <- gsub("FROM", "INTO public.tempfoobar\nFROM", sql)
+        sql <- postgis_raster_extract(ch, x=rastername, 
+                                      y=pointsLayer, 
+                                      zone_label = zone_label, 
+                                      value_label = "value"
+                                      )
+        sql <- gsub("FROM", 
+                    sprintf("INTO %s.%s\nFROM", temporary_table$schema, 
+                            temporary_table$table)
+                    ,
+                    sql)
         #cat(sql)  
         
         dbSendQuery(ch, sql) 
@@ -828,20 +848,21 @@ pgListTables <- function(conn, schema, pattern = NA)
         tblExists <- pgListTables(ch, schemaName, tableName)
         if(nrow(tblExists) == 0)
         {
-          sql <- sql_subset_into(ch, x="public.tempfoobar", into_schema=schemaName,
+          sql <- sql_subset_into(ch, x=temporary_table$fullname, 
+                                 into_schema=schemaName,
                                  into_table=tableName,eval=F, drop=F
           )
-          #cat(sql)
+          # cat(sql)
           dbSendQuery(ch, sql)      
         } else {
-          sql <- sql_subset(ch, x="public.tempfoobar", eval=F)
+          sql <- sql_subset(ch, x=temporary_table$fullname, eval=F)
           sql <- paste("INSERT INTO ",schemaName,".",tableName," (
             ", zone_label, ", raster_layer, value)
             ",sql,sep ="")
           #cat(sql)
           dbSendQuery(ch, sql)
         }
-        dbSendQuery(ch, "drop table public.tempfoobar")
+        dbSendQuery(ch, sprintf("drop table %s", temporary_table$fullname))
         #}
       }
     }
@@ -851,25 +872,6 @@ pgListTables <- function(conn, schema, pattern = NA)
   
   
   
-  reformat_awap_data  <- function(
-    tableName = "weather_sla.weather_nswsla06",
-    zone_label = "address"
-  )
-  {
-    dat <- sql_subset(ch, tableName, eval = T)
-    dat$date <- matrix(unlist(strsplit(dat$raster_layer, "_")), ncol = 3, byrow=TRUE)[,3]
-    dat$date <- paste(substr(dat$date,1,4), substr(dat$date,5,6), substr(dat$date,7,8), sep = "-")
-    dat$measure <- matrix(unlist(strsplit(dat$raster_layer, "_")), ncol = 3, byrow=TRUE)[,2]
-    dat$measure <- gsub("grids.","",dat$measure)
-    
-    dat <- arrange(dat,  date, measure)
-    dat <- as.data.frame(cast(dat, address + date ~ measure, value = "value",
-                              fun.aggregate= "mean")
-                         )
-    dat$date <- as.Date(dat$date)
-    return(dat)
-  }
-  
   
     
     
@@ -877,47 +879,163 @@ pgListTables <- function(conn, schema, pattern = NA)
 *** test-raster_extract_by_day
 #+name:raster_extract_by_day
 #+begin_src R :session *R* :tangle tests/test-raster_extract_by_day.r :exports none :eval no
-################################################################
-# name:raster_extract_by_day
-require(swishdbtools)
-require(awaptools)
-startdate <- "2013-04-01" #StartDate
-enddate <- "2013-04-02" #EndDate
-
-#source("D:\\Development\\SydneyThing\\raster_extract_by_day.R")
-
-ch<-connect2postgres2("ewedb")
-
-tempTableName <- tempfile("foo", tmpdir = Sys.getenv("TEMP"), fileext = "")
-
-tempTableName <- gsub("\\.", "", tempTableName)
-tempTableName <- gsub(":", "", tempTableName)
-tempTableName <- gsub("\\\\", "", tempTableName)
-tempTableName <- gsub("/", "", tempTableName)
-
-raster_extract_by_day(ch, startdate, enddate,
-                                   schemaName = "public",
-                                   tableName = tempTableName,
-                                   pointsLayer = "locations",
-                                   measures = c("maxave", "minave")
-)
-
-schemaTableName <- paste(sep=".", "public", tempTableName)
-
-data <- reformat_awap_data(
-  tableName = schemaTableName
-)
-
-tempFileName <- tempfile("foo", tmpdir = Sys.getenv("TEMP"), fileext = "")
-write.dta(data, tempFileName)
-tempFileName
-
+  ################################################################
+  # name:raster_extract_by_day
+  require(swishdbtools)
+  require(awaptools)
+  startdate <- "2013-04-01" #StartDate
+  enddate <- "2013-04-02" #EndDate
+  
+  ch<-connect2postgres2("ewedb")
+  
+  
+  # get locations
+  stn  <- sql_subset(ch, "weather_bom.combstats", eval = T)
+  head(stn)  
+  
+  # clean
+  names(stn) <- gsub("lon", "long", names(stn))
+  names(stn) <- gsub("gid", "gid2", names(stn))
+  nrow(stn)
+  
+  # sample
+  percentSample <- 0.01
+  sampled  <- sample(stn$stnum, percentSample * nrow(stn))
+  length(sampled)
+  locations  <- stn[which(stn$stnum %in% sampled),]
+  head(locations)
+  
+  # send to postgis
+  tempTableName <- swish_temptable()
+  sch <- tempTableName$schema
+  tbl <- tempTableName$table
+  
+  tempTableName <- tempTableName$fullname
+  
+  exists <- pgListTables(ch, sch, tbl)
+  if(nrow(exists) > 0){
+    dbSendQuery(ch, 
+                sprintf("drop table %s.%s", sch, tbl)
+    )
+  }
+  dbWriteTable(ch, tbl, locations, row.names = F)
+  tested <- sql_subset(ch, tempTableName, eval = T)
+  # head(tested)
+  
+  tempTableName
+  
+  # points2geom
+  
+  sql <- points2geom(
+    schema=sch,
+    tablename=tbl,
+    col_lat= "lat",col_long="long", srid="4283"
+  )
+  # cat(sql)
+  dbSendQuery(ch, sql)
+  tbl
+  
+  # raster extract
+  raster_extract_by_day(ch, startdate, enddate,
+                                     schemaName = sch
+                        ,
+                                     tableName = "output_one"
+                        ,
+                                     pointsLayer = tempTableName
+                        ,
+                                     measures = c("maxave", "minave")
+                        ,
+                        zone_label = "stnum"
+  )
+  
+  schemaTableName <- paste(sep=".", sch, "output_one")
+  
+  # get result and reformat
+  require(swishdbtools)
+  require(awaptools)
+  require(reshape)
+  data <- reformat_awap_data(
+    tableName = schemaTableName,
+    zone_label = "stnum"
+  )
+  
+  tempFileName <- tempfile("foo", tmpdir = Sys.getenv("TEMP"), fileext = "")
+  write.dta(data, tempFileName)
+  tempFileName
+  
+  
+  ################################################################
+  # name: tidy up
+  require(swishdbtools)
+  ch<-connect2postgres2("ewedb")
+  sch <- swish_temptable("ewedb")
+  sch <- sch$schema
+  tbls <- pgListTables(ch, sch, table="foo", match = FALSE)
+  tbls
+  for(tab in tbls[,1])
+  {
+    #tab <- tbls[1,1]
+    dbSendQuery(ch, 
+                sprintf("drop table %s.\"%s\"", sch, tab)
+    )
+  }
+  
 #+end_src
 *** man-raster_extract_by_day
 #+name:raster_extract_by_day
 #+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
 # name:raster_extract_by_day
+
+#+end_src
+
+** reformat_awap_data
+*** R-reformat_awap_data
+#+name:reformat_awap_data
+#+begin_src R :session *R* :tangle R/reformat_awap_data.r :exports none :eval no
+################################################################
+# name:reformat_awap_data
+reformat_awap_data  <- function(
+  tableName = "weather_sla.weather_nswsla06",
+  zone_label = "address"
+)
+{
+  dat <- sql_subset(ch, tableName, eval = T)
+  dat$date <- matrix(unlist(strsplit(dat$raster_layer, "_")), ncol = 3, byrow=TRUE)[,3]
+  dat$date <- paste(substr(dat$date,1,4), substr(dat$date,5,6), substr(dat$date,7,8), sep = "-")
+  dat$measure <- matrix(unlist(strsplit(dat$raster_layer, "_")), ncol = 3, byrow=TRUE)[,2]
+  dat$measure <- gsub("grids.","",dat$measure)
+  
+  dat <- arrange(dat,  date, measure)
+  #  dat <- as.data.frame(cast(dat, address + date ~ measure, value = "value",
+  #                            fun.aggregate= "mean")
+  #                       )
+  dat <- eval(
+    parse(
+      text=sprintf(
+        "as.data.frame(cast(dat, %s + date ~ measure, value = 'value',
+                            fun.aggregate= 'mean')
+                       )", zone_label
+      )
+    )
+  )
+  
+  dat$date <- as.Date(dat$date)
+  return(dat)
+}
+#+end_src
+*** test-reformat_awap_data
+#+name:reformat_awap_data
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:reformat_awap_data
+
+#+end_src
+*** man-reformat_awap_data
+#+name:reformat_awap_data
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:reformat_awap_data
 
 #+end_src
 

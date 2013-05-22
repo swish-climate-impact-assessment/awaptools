@@ -88,9 +88,3 @@ raster_extract_by_day  <- function(ch, startdate, enddate,
     }
   }
 }
-
-
-
-
-
-
