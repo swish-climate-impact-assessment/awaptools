@@ -1,7 +1,7 @@
 
 ################################################################
 # name:raster_aggregate
-raster_aggregate <- function(filename, aggregationfactor, delete = TRUE)
+raster_aggregate <- function(filename, aggregationfactor, delete = TRUE, fname = filename)
 {
   r <- raster(filename)
   if(aggregationfactor > 1) r <- aggregate(r, fact = aggregationfactor, fun = mean)
