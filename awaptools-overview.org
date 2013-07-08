@@ -7,6 +7,153 @@
 -----
 
 *  PACKAGE 
+** get_awap_data
+*** R-get_awap_data
+#+name:get_awap_data
+#+begin_src R :session *R* :tangle R/get_awap_data.r :exports none :eval no
+################################################################
+# name:get_awap_data
+get_awap_data <- function(start, end, measure_i)
+{
+  variableslist <- variableslist()  
+  variable <- variableslist[which(variableslist$measure == measure_i),]
+  vname <- as.character(variable[,1])
+  datelist <- seq(as.Date(start), as.Date(end), 1)
+  
+  for(date_i in datelist)
+  {
+    # date_i <- datelist[1]
+    date_i <- as.Date(date_i, origin = '1970-01-01')
+    sdate <- as.character(date_i)
+    edate <- date_i
+    
+    if(!file.exists(sprintf("%s_%s%s.grid",measure_i,gsub("-","",sdate),gsub("-","",edate))))
+    {
+      get_data_range(variable=as.character(variable[,1]),
+                     measure=as.character(variable[,2]),
+                     timestep=as.character(variable[,3]),
+                     startdate=as.POSIXct(sdate),
+                     enddate=as.POSIXct(edate))
+      
+      fname <- sprintf("%s_%s%s.grid.Z",measure_i,gsub("-","",sdate),gsub("-","",edate))
+      if(file.info(fname)$size == 0)
+      {
+        file.remove(fname)
+        next
+      }
+      os <- LinuxOperatingSystem()
+      if(os)
+      {
+        uncompress_linux(filename = fname)
+      } else {
+        Decompress7Zip(zipFileName= fname, outputDirectory=getwd(), TRUE)
+      }
+    }
+  }
+  
+}
+
+#+end_src
+*** test-get_awap_data
+#+name:get_awap_data
+#+begin_src R :session *R* :tangle tests/test-get_awap_data.r :exports none :eval no
+################################################################
+# name:get_awap_data
+# test
+
+# functions
+require(devtools)
+install_github('awaptools','swish-climate-impact-assessment')
+require(awaptools)
+install_github('swishdbtools','swish-climate-impact-assessment')
+require(swishdbtools)
+variableslist <- variableslist()  
+vars <- c("maxave","minave","totals","vprph09","vprph15","solarave")
+for(measure in vars)
+{
+  get_awap_data(start = '1990-01-01',end = '1990-01-01', measure)
+}
+fileslist <- dir(pattern="grid$")
+r <- readGDAL(fname=fileslist[5])
+image(r)
+#+end_src
+*** man-get_awap_data
+#+name:get_awap_data
+#+begin_src markdown :tangle man/get_awap_data.Rd :exports none :eval no :padline no
+\name{get_awap_data}
+\alias{get_awap_data}
+%- Also NEED an '\alias' for EACH other topic documented here.
+\title{
+Get AWAP data
+}
+\description{
+Download grids from BoM site
+}
+\usage{
+get_awap_data(start, end, measure_i)
+}
+%- maybe also 'usage' for other objects documented here.
+\arguments{
+  \item{start}{
+start date for downloading from
+}
+  \item{end}{
+end date for downloading from
+}
+  \item{measure_i}{
+meteorological variable to download.  see variableslist() 
+}
+
+}
+\details{
+%%  ~~ If necessary, more details than the description above ~~
+}
+\value{
+The downloaded files will be unzipped (depends on zip software) into the current working directory
+%%  ~Describe the value returned
+%%  If it is a LIST, use
+%%  \item{comp1 }{Description of 'comp1'}
+%%  \item{comp2 }{Description of 'comp2'}
+%% ...
+}
+\references{
+%% ~put references to the literature/web site here ~
+}
+\author{
+ivanhanigan
+}
+\note{
+%%  ~~further notes~~
+}
+
+%% ~Make other sections like Warning with \section{Warning }{....} ~
+
+\seealso{
+%% ~~objects to See Also as \code{\link{help}}, ~~~
+}
+\examples{
+## Not run:
+require(awaptools)
+require(swishdbtools)
+variableslist <- variableslist()  
+vars <- c("maxave","minave","totals","vprph09","vprph15","solarave")
+for(measure in vars)
+{
+  get_awap_data(start = '1990-01-01',end = '1990-01-01', measure)
+}
+fileslist <- dir(pattern="grid$")
+r <- readGDAL(fname=fileslist[1])
+image(r)
+
+## End(Not run)
+}
+% Add one or more standard keywords, see file 'KEYWORDS' in the
+% R documentation directory.
+\keyword{ ~kwd1 }
+\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+
+#+end_src
+
 ** core libs
 #+begin_src R  :session *R* :exports none :eval no :tangle R/func.r
   # Project: AWAP_GRIDS
