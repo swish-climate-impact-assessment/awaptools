@@ -7,7 +7,7 @@
 #start_date <- as.POSIXlt(start_date)
 #require(devtools)
 #install_github("awaptools", "swish-climate-impact-assessment")
-load_monthly <- function(startdate)
+load_monthly <- function(start_date)
   {
   variableslist <- variableslist()
   variableslist
