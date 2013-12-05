@@ -28,8 +28,8 @@ unzip_monthly <- function(filename, aggregation_factor = 1)
        Decompress7Zip(zipFileName= fname, outputDirectory=getwd(), TRUE)
      }
 
-     raster_aggregate(filename = gsub('.Z$','',fname),
-       aggregationfactor = aggregation_factor, delete = TRUE)
+     #raster_aggregate(filename = gsub('.Z$','',fname),
+     #  aggregationfactor = aggregation_factor, delete = TRUE)
      
 
   }
