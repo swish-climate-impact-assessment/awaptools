@@ -7,16 +7,14 @@
 #start_date <- as.POSIXlt(start_date)
 #require(devtools)
 #install_github("awaptools", "swish-climate-impact-assessment")
-load_monthly <- function(start_date)
+load_monthly <- function(start_date, end_date)
   {
+  start_date <- as.POSIXlt(start_date)
+  end_date <- as.POSIXlt(end_date)
   variableslist <- variableslist()
   variableslist
   vname <- variableslist[1,1]
   measure_i <- variableslist[1,2]
-  end_date <- as.POSIXlt(
-                   paste(as.numeric(format(Sys.Date(), "%Y")),
-                         as.numeric(format(Sys.Date(), "%m")) -1, 1, sep = "-")
-                 )
   dateslist <- as.character(seq(start_date, end_date, by = "month"))
   for(date_i in dateslist)
     {
@@ -51,4 +49,4 @@ load_monthly <- function(start_date)
                      enddate = edate
                  )
     }
-  }
+}
