@@ -1337,7 +1337,6 @@ reformat_awap_data  <- function(
 
 #+end_src
 
-
 ** unzip_monthly
 *** R-unzip_monthly
 
@@ -1393,4 +1392,38 @@ reformat_awap_data  <- function(
 ################################################################
 # name:unzip_monthly
 
+#+end_src
+** 2014-02-27-long-term-climatology-contextual-data-for-ecological-research
+#+name:long-term-climatology-contextual-data-for-ecological-research-header
+#+begin_src R :session *R* :tangle ~/projects/ivanhanigan.github.com.raw/_posts/2014-02-27-long-term-climatology-contextual-data-for-ecological-research.md :exports none :eval no :padline no
+  ---
+  name: 2014-02-27-long-term-climatology-contextual-data-for-ecological-research
+  layout: post
+  title: long-term-climatology-contextual-data-for-ecological-research
+  date: 2014-02-27
+  categories:
+  - extreme weather events
+  - Drought
+  ---
+  
+  - Studies of extreme weather events such as drought require long term climate data 
+  - these are available at continental scale derived from
+  - observations from a network of weather stations that are interpolated to a surface
+  - I have been working on techniques with R and online resources (the Australian Water Availabilty Project AWAP) to make working with these long term climatology datasets easier.
+  
+  ## Case Study
+     
+  - aim is need to look at seasonal rainfall means.
+  - first thing is to get a sample dataset, start with 1970 to 2014.
+  
+  #### R Code:
+      # I'm on linux
+      require(devtools)
+      install_github("awaptools", "swish-climate-impact-assessment")
+  
+      
+  ### Follow the works at
+  
+  - https://github.com/swish-climate-impact-assessment/awaptools
+  - https://github.com/RationShop/rain_r/wiki/The-Rain-Project
 #+end_src
