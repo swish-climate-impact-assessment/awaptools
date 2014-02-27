@@ -1393,6 +1393,7 @@ reformat_awap_data  <- function(
 # name:unzip_monthly
 
 #+end_src
+* doco
 ** 2014-02-27-long-term-climatology-contextual-data-for-ecological-research
 #+name:long-term-climatology-contextual-data-for-ecological-research-header
 #+begin_src R :session *R* :tangle ~/projects/ivanhanigan.github.com.raw/_posts/2014-02-27-long-term-climatology-contextual-data-for-ecological-research.md :exports none :eval no :padline no
@@ -1417,13 +1418,37 @@ reformat_awap_data  <- function(
   - first thing is to get a sample dataset, start with 1970 to 2014.
   
   #### R Code:
-      # I'm on linux
+      # on linux can install direct, on windoze you configure Rtools
       require(devtools)
       install_github("awaptools", "swish-climate-impact-assessment")
+      require(awaptools)
+      setwd("inst/extdata")
+      # download a couple hundred megs
+      load_monthly(start_date="1970-01-01", end_date="2014-01-31")
+      # expand to over a gig
+      cfiles <- dir()
+      for(f in cfiles){
+        unzip_monthly(f)
+      }
+      # now we can try to select the seasonal bits
+  # this comes from Lu Porfirio
+  grids  <- dir()
+  # grids[1:12]
+  summer.mth <- c('11','12','01','02','03')
+  mths <- substr(grids,20,21) %in% summer.mth
+  test <- ifelse(mths == "TRUE", grids, NA)
+  grids.brick <- brick(stack(grids))
+  awap.stack<-stackApply(grids.brick, indices = match(test,grids), fun = "mean")
+  # the output has too many layers...
+  ## this is because we are not considering that summers go across 2-yr
+   
+  <p></p>
   
-      
-  ### Follow the works at
+  ### Please submit issues at
   
   - https://github.com/swish-climate-impact-assessment/awaptools
+  
+  ### Also follow the international collaboratoin effort at
+  
   - https://github.com/RationShop/rain_r/wiki/The-Rain-Project
 #+end_src
