@@ -1265,10 +1265,9 @@ reformat_awap_data  <- function(
 
 #+end_src
 
-* Do
-**  monthly
-*** load-monthly
-#+name:load-monthly
+** load_monthly
+*** R-load_monthly
+#+name:load_monthly
 #+begin_src R :session *R* :tangle R/load_monthly.r :exports none :eval no
   ################################################################
   # name:load-monthly
@@ -1323,8 +1322,24 @@ reformat_awap_data  <- function(
   }
   
 #+end_src
+*** test-load_monthly
+#+name:load_monthly
+#+begin_src R :session *R* :tangle tests/test-load_monthly.r :exports none :eval no
+################################################################
+# name:load_monthly
 
-*** unzip-monthly
+#+end_src
+*** man-load_monthly
+#+name:load_monthly
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:load_monthly
+
+#+end_src
+
+
+** unzip_monthly
+*** R-unzip_monthly
 
 #+name:unzip
 #+begin_src R :session *R* :tangle R/unzip_monthly.r :exports none :eval no
@@ -1365,4 +1380,17 @@ reformat_awap_data  <- function(
   
 #+end_src
 
+*** test-unzip_monthly
+#+name:unzip_monthly
+#+begin_src R :session *R* :tangle tests/test-unzip_monthly.r :exports none :eval no
+################################################################
+# name:unzip_monthly
 
+#+end_src
+*** man-unzip_monthly
+#+name:unzip_monthly
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:unzip_monthly
+
+#+end_src
