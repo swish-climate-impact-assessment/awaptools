@@ -121,3 +121,5 @@ title(gridname)
 dev.off()
 
 ```
+
+![tests/vprph15_2016030620160306.grid-test.png](tests/vprph15_2016030620160306.grid-test.png)
