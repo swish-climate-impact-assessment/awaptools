@@ -123,3 +123,22 @@ dev.off()
 ```
 
 ![tests/vprph15_2016030620160306.grid-test.png](tests/vprph15_2016030620160306.grid-test.png)
+
+
+```r
+# most data are available since 1950
+vars <- c("maxave","minave","totals","vprph09","vprph15") #,"solarave") 
+# solar only available after 1990
+for(measure in vars)
+{
+  #measure <- vars[1]
+  get_awap_data(start = '1950-01-01',end = '1950-01-01', measure)
+}
+
+# rainfall since 1900
+measure <- "totals"
+get_awap_data(start = '1900-01-01',end = '1900-01-01', measure)
+
+
+
+```
