@@ -16,7 +16,6 @@ unzip_monthly <- function(filename, aggregation_factor = 1)
         stop("file doesn't exist")
       }
   require(raster)
-  require(swishdbtools)
   os <- LinuxOperatingSystem()
 
 
