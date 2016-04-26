@@ -28,7 +28,6 @@ Makes assumptions:
 linux has gzip and windoze has 7zip in default locations
 
 please download swish R packages from 
- http://swish-climate-impact-assessment.github.io/tools/swishdbtools/swishdbtools-downloads.html
 
 http://swish-climate-impact-assessment.github.io/tools/awaptools/awaptools-downloads.html
 
@@ -58,8 +57,8 @@ ivanhanigan
 }
 \examples{
 ## Not run:
-require(awaptools)
-require(swishdbtools)
+library(awaptools)
+library(raster)
 variableslist <- variableslist()  
 vars <- c("maxave","minave","totals","vprph09","vprph15","solarave")
 for(measure in vars)
@@ -67,8 +66,8 @@ for(measure in vars)
   get_awap_data(start = '1990-01-01',end = '1990-01-01', measure)
 }
 fileslist <- dir(pattern="grid$")
-r <- readGDAL(fname=fileslist[1])
-image(r)
+r <- raster(fileslist[1])
+plot(r)
 
 ## End(Not run)
 }

@@ -20,27 +20,23 @@
   #### R-Code: A workflow to download and process the public BoM weather grids.
   
   ```r
-  # depends
-  install.packages(c('raster', 'rgdal', 'plyr', 'RODBC', 'RCurl', 'XML', 'ggmap', 'maptools', 'spdep'))
-  
   # This workflow uses the open source R software with some of our custom written packages:
   # aim daily weather for any point location from online BoM weather grids
   # depends on some github packages, either use devtools
   install.packages("devtools")
   library(devtools)
   install_github("awaptools", "swish-climate-impact-assessment")
-  install_github("swishdbtools", "swish-climate-impact-assessment")
-  install_github("gisviz", "ivanhanigan")
   
   # OR download and install
   # http://swish-climate-impact-assessment.github.io/tools/awaptools/awaptools-downloads.html
-  # http://swish-climate-impact-assessment.github.io/tools/swishdbtools/swishdbtools-downloads.html
-  # http://ivanhanigan.github.io/gisviz/
+  
   
   library(awaptools)
-  library(swishdbtools)
-  library(gisviz)   
+  library(rgdal)
+  library(raster)
+  library(plyr)
   library(reshape) 
+  library(ggmap)
   # get weather data, beware that each grid is a couple of megabytes
   vars <- c("maxave","minave","totals","vprph09","vprph15") #,"solarave") 
   # solar only available after 1990
@@ -53,14 +49,14 @@
   # get location
   address2 <- c("1 Lineaus way acton canberra", "daintree forest queensland", "hobart",
                 "bourke")
-  locn <- gGeoCode2(address2, first = T)
+  locn <- geocode(address2)
   
   # this uses google maps API, better check this
   locn
   
   ## Treat data frame as spatial points
   epsg <- make_EPSG()
-  shp <- SpatialPointsDataFrame(cbind(locn$lon,locn$lat),locn,
+  shp <- SpatialPointsDataFrame(cbind(locn$lon,locn$lat),data.frame(address = address2, locn),
                                 proj4string=CRS(epsg$prj4[epsg$code %in% '4283']))
   # now loop over grids and extract met data
   cfiles <-  dir(pattern="grid$")
@@ -88,10 +84,10 @@
   dat$measure <- matrix(unlist(strsplit(dat$gridname, "_")), ncol = 2, byrow=TRUE)[,1]
   
   
-  dat <- arrange(dat[,c("address", "long", "lat", "date", "measure", "values")], address, date, measure)
+  dat <- arrange(dat[,c("address", "lon", "lat", "date", "measure", "values")], address, date, measure)
   head(dat)
   
-  dat2 <- cast(dat, address +    long     +  lat    +   date ~ measure, value = 'values',
+  dat2 <- cast(dat, address +    lon     +  lat    +   date ~ measure, value = 'values',
         fun.aggregate= 'mean')
   dat2
   
@@ -310,7 +306,6 @@ Makes assumptions:
 linux has gzip and windoze has 7zip in default locations
 
 please download swish R packages from 
- http://swish-climate-impact-assessment.github.io/tools/swishdbtools/swishdbtools-downloads.html
 
 http://swish-climate-impact-assessment.github.io/tools/awaptools/awaptools-downloads.html
 
@@ -340,8 +335,8 @@ ivanhanigan
 }
 \examples{
 ## Not run:
-require(awaptools)
-require(swishdbtools)
+library(awaptools)
+library(raster)
 variableslist <- variableslist()  
 vars <- c("maxave","minave","totals","vprph09","vprph15","solarave")
 for(measure in vars)
@@ -349,8 +344,8 @@ for(measure in vars)
   get_awap_data(start = '1990-01-01',end = '1990-01-01', measure)
 }
 fileslist <- dir(pattern="grid$")
-r <- readGDAL(fname=fileslist[1])
-image(r)
+r <- raster(fileslist[1])
+plot(r)
 
 ## End(Not run)
 }
@@ -361,8 +356,8 @@ image(r)
 
 #+end_src
 
-** core libs
-#+begin_src R  :session *R* :exports none :eval no :tangle R/func.r
+** DEPRECATED core libs
+#+begin_src R  :session *R* :exports none :eval no :tangle no
   # Project: AWAP_GRIDS
   # Author: ivanhanigan
   # Maintainer: Who to complain to <ivan.hanigan@gmail.com>
@@ -402,9 +397,9 @@ image(r)
   if (!require(ggplot2)) install.packages('ggplot2', repos='http://cran.csiro.au'); require(ggplot2)
   
 #+end_src
-** check_duplicates-lib
+** DEPRECATED check_duplicates-lib
 #+name:check_duplicates
-#+begin_src R :session *R* :tangle R/check_duplicates.r :exports none :eval no
+#+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
   # name:check_duplicates
   check_duplicates <- function(conn, measures = c("vprph09","vprph15"), measure_name = "vprph", dates)
@@ -435,7 +430,7 @@ image(r)
     #      i = 2
           measure <- measures[i]
           rastername <- paste(measures[i], "_", date_i, sep ="")
-            r1 <- readGDAL2("115.146.84.135", "gislibrary", "ewedb",
+            r1 <- readGDAL2("XXX", "gislibrary", "ewedb",
                             "awap_grids", rastername, p = pwd)
     #        image(r1)
             rasters[[i]] <- r1
@@ -465,20 +460,10 @@ image(r)
   
 #+end_src
 
-** DatesUnavaliable
-*** COMMENT test-DatesUnavailable
-#+name:DatesUnavailable
-#+begin_src R :session *R* :tangle no :exports none :eval no
-  ################################################################
-  # name:DatesUnavailable
-  require(devtools)
-  install_github("awaptools", "swish-climate-impact-assessment")
-  DatesUnavailable
-  
-#+end_src
+** DEPRECATED DatesUnavaliable
 *** COMMENT R-DatesUnavailable
 #+name:DatesUnavailable
-#+begin_src R :session *shell* :tangle R/DatesUnavailable.R :exports none :eval no
+#+begin_src R :session *shell* :tangle no :exports none :eval no
 ###########################################################################
 # newnode: DatesUnavailable
 
@@ -519,6 +504,16 @@ DatesUnavailable <- function (dataBaseConnection, variableName, startDate, endDa
 
 
 #+end_src
+*** COMMENT test-DatesUnavailable
+#+name:DatesUnavailable
+#+begin_src R :session *R* :tangle no :exports none :eval no
+  ################################################################
+  # name:DatesUnavailable
+  require(devtools)
+  install_github("awaptools", "swish-climate-impact-assessment")
+  DatesUnavailable
+  
+#+end_src
 
 ** Get Data 
 #+begin_src R :session *R* :tangle R/get_data.r :exports none :eval no
@@ -537,27 +532,6 @@ get_data<-function(variable,measure,timestep,startdate,enddate){
   }
 #+end_src
 ** Get Data Range
-*** COMMENT test-get_data_range-code
-#+name:test-get_data_range
-#+begin_src R :session *R* :tangle no :exports none :eval no
-  ################################################################
-  # name:test-get_data_range
-  require(awaptools)
-  variableslist <- variableslist()
-  variableslist
-  get_data_range(
-                 variable = variableslist[1,1]
-                 ,
-                 measure = variableslist[1,2]
-                 ,
-                 timestep = "monthly"
-                 ,
-                 startdate = as.POSIXct("1911-01-01")
-                 ,
-                 enddate = as.POSIXct("1911-06-01")
-                 )
-  
-#+end_src
 *** get_data_range-code
 #+begin_src R :session *R* :tangle R/get_data_range.r :exports none :eval no
   # newnode get_data_range
@@ -593,6 +567,27 @@ get_data<-function(variable,measure,timestep,startdate,enddate){
       stop("Unsupported timestep, only 'daily' and 'month' are currently supported")
     }
   }
+  
+#+end_src
+*** COMMENT test-get_data_range-code
+#+name:test-get_data_range
+#+begin_src R :session *R* :tangle no :exports none :eval no
+  ################################################################
+  # name:test-get_data_range
+  require(awaptools)
+  variableslist <- variableslist()
+  variableslist
+  get_data_range(
+                 variable = variableslist[1,1]
+                 ,
+                 measure = variableslist[1,2]
+                 ,
+                 timestep = "monthly"
+                 ,
+                 startdate = as.POSIXct("1911-01-01")
+                 ,
+                 enddate = as.POSIXct("1911-06-01")
+                 )
   
 #+end_src
 
@@ -739,7 +734,7 @@ get_data<-function(variable,measure,timestep,startdate,enddate){
   
 #+end_src
 
-** COMMENT load2postgres_raster
+** DEPRECATED load2postgres_raster
 #+name:load2postgres_raster
 #+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
@@ -781,7 +776,7 @@ get_data<-function(variable,measure,timestep,startdate,enddate){
   
 #+end_src
 
-** COMMENT deprecated pgListTables, moved to swishdbtools
+** DEPRECATED pgListTables, moved to swishdbtools
 #+name:pgListTables
 #+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
@@ -799,7 +794,7 @@ get_data<-function(variable,measure,timestep,startdate,enddate){
     return(tables)
   }
 #+end_src
-** COMMENT pgListTables
+** DEPRECATED pgListTables
 #+name:pgListTables
 #+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
@@ -818,7 +813,7 @@ pgListTables <- function(conn, schema, pattern = NA)
 }
 #+end_src
 
-** COMMENT pgListTables-test dates
+** DEPRECATED pgListTables-test dates
 #+name:pgListTables-test
 #+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
@@ -828,7 +823,7 @@ pgListTables <- function(conn, schema, pattern = NA)
   
   require(swishdbtools)
   p <- getPassword(remote=T)
-  ch <- connect2postgres(h = '115.146.84.135', db = 'ewedb', user=
+  ch <- connect2postgres(h = 'XXX', db = 'ewedb', user=
                          'gislibrary', p=p)
   measure_i <- 'vprph15'
   tbls <- pgListTables(conn=ch, schema='awap_grids', table=measure_i, match = FALSE)
@@ -845,9 +840,9 @@ pgListTables <- function(conn, schema, pattern = NA)
   tbls[tbls$date >= as.Date('2004-01-01') & tbls$date < as.Date('2005-01-01'),]
   
 #+end_src
-** sqlquery_oracle
+** DEPRECATED sqlquery_oracle
 #+name:sqlquery
-#+begin_src R :session *R* :tangle R/sqlquery.r :exports none :eval no
+#+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
   # name:aggregate_postgres
   sqlquery <- function(channel, dimensions, operation,
@@ -911,9 +906,9 @@ pgListTables <- function(conn, schema, pattern = NA)
   
   }
 #+end_src
-** sqlquery_postgres
+** DEPRECATED sqlquery_postgres
 #+name:sqlquery
-#+begin_src R :session *R* :tangle R/sqlquery_postgres.r :exports none :eval no
+#+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
   # name:aggregate_postgres
     
@@ -1020,7 +1015,7 @@ pgListTables <- function(conn, schema, pattern = NA)
   }
     
 #+end_src
-** COMMENT sqlquery-test
+** DEPRECATED sqlquery-test
 #+name:sqlquery-test
 #+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
@@ -1029,7 +1024,7 @@ pgListTables <- function(conn, schema, pattern = NA)
   load.project()
   
   require(swishdbtools)
-  ch <- connect2postgres(hostip='115.146.84.135', db='ewedb', user='gislibrary', p='gislibrary')
+  ch <- connect2postgres(hostip='xxx', db='ewedb', user='gislibrary', p='gislibrary')
   sqlquery_postgres(
       channel = ch,
       append = TRUE,
@@ -1070,7 +1065,7 @@ pgListTables <- function(conn, schema, pattern = NA)
   ##     having = NA
   
 #+end_src
-** COMMENT test2
+** DEPRECATED test2
 #+name:sqlquery_postgres-test2
 #+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
@@ -1084,7 +1079,7 @@ pgListTables <- function(conn, schema, pattern = NA)
     load.project()
   
     require(swishdbtools)
-    ch <- connect2postgres(hostip='115.146.84.135', db='ewedb', user='gislibrary', p='gislibrary')
+    ch <- connect2postgres(hostip='XXX', db='ewedb', user='gislibrary', p='gislibrary')
   
     variable_j <- "maxave"
     date_i <- '2012-01-01'
@@ -1128,10 +1123,10 @@ pgListTables <- function(conn, schema, pattern = NA)
     }
   
 #+end_src
-** raster_extract_by_day
+** DEPRECATED raster_extract_by_day
 *** R-raster_extract_by_day
 #+name:raster_extract_by_day
-#+begin_src R :session *R* :tangle R/raster_extract_by_day.r :exports none :eval no
+#+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
   # name:raster_extract_by_day
   raster_extract_by_day  <- function(ch = NA, startdate = NA, enddate = NA,
@@ -1232,7 +1227,7 @@ pgListTables <- function(conn, schema, pattern = NA)
 #+end_src
 *** test-raster_extract_by_day
 #+name:raster_extract_by_day
-#+begin_src R :session *R* :tangle tests/test-raster_extract_by_day.r :exports none :eval no
+#+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
   # name:raster_extract_by_day
   require(swishdbtools)
@@ -1343,10 +1338,10 @@ pgListTables <- function(conn, schema, pattern = NA)
 
 #+end_src
 
-** reformat_awap_data
+** TODO DEPRECATED reformat_awap_data
 *** R-reformat_awap_data
 #+name:reformat_awap_data
-#+begin_src R :session *R* :tangle R/reformat_awap_data.r :exports none :eval no
+#+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
 # name:reformat_awap_data
 reformat_awap_data  <- function(
@@ -1452,7 +1447,7 @@ reformat_awap_data  <- function(
 #+end_src
 *** test-load_monthly
 #+name:load_monthly
-#+begin_src R :session *R* :tangle tests/test-load_monthly.r :exports none :eval no
+#+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
 # name:load_monthly
 
@@ -1487,7 +1482,6 @@ reformat_awap_data  <- function(
           stop("file doesn't exist")
         }
     require(raster)
-    require(swishdbtools)
     os <- LinuxOperatingSystem()
   
   
@@ -1509,7 +1503,7 @@ reformat_awap_data  <- function(
 
 *** test-unzip_monthly
 #+name:unzip_monthly
-#+begin_src R :session *R* :tangle tests/test-unzip_monthly.r :exports none :eval no
+#+begin_src R :session *R* :tangle no :exports none :eval no
 ################################################################
 # name:unzip_monthly
 
@@ -1522,3 +1516,45 @@ reformat_awap_data  <- function(
 
 #+end_src
 
+** LinuxOperatingSystem
+*** R-LinuxOperatingSystem
+#+name:LinuxOperatingSystem
+#+begin_src R :session *R* :tangle R/LinuxOperatingSystem.r :exports none :eval no
+################################################################
+# name:LinuxOperatingSystem
+LinuxOperatingSystem <- function()
+{
+  if(length(grep('linux',sessionInfo()[[1]]$os)) == 1)
+  {
+    #print('Linux')
+    os <- 'linux' 
+    OsLinux <- TRUE
+  }else if (length(grep('ming',sessionInfo()[[1]]$os)) == 1)
+  {
+    #print('Windows')
+    os <- 'windows'
+    OsLinux <- FALSE
+  }else
+  {
+    # don't know, do more tests
+    print('Non linux or windows os detected. Assume linux-alike.')
+    os <- 'linux?'
+    OsLinux <- TRUE
+  }
+ 
+  return (OsLinux)
+}
+
+#+end_src
+*** test-LinuxOperatingSystem
+#+name:LinuxOperatingSystem
+#+begin_src R :session *R* :tangle no :exports none :eval no
+################################################################
+# name:LinuxOperatingSystem
+
+#+end_src
+*** man-LinuxOperatingSystem
+#+name:LinuxOperatingSystem
+#+begin_src R :session *R* :tangle no :exports none :eval no :padline no
+
+#+end_src
