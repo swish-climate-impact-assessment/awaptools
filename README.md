@@ -11,7 +11,7 @@ awaptools
 
 ```r
 # depends
-install.packages(c('raster', 'rgdal', 'plyr', 'RODBC', 'RCurl', 'XML', 'ggmap', 'maptools', 'spdep'))
+install.packages(c('raster'))
 
 # This workflow uses the open source R software with some of our custom written packages:
 # aim daily weather for any point location from online BoM weather grids
@@ -19,18 +19,17 @@ install.packages(c('raster', 'rgdal', 'plyr', 'RODBC', 'RCurl', 'XML', 'ggmap', 
 install.packages("devtools")
 library(devtools)
 install_github("awaptools", "swish-climate-impact-assessment")
-install_github("swishdbtools", "swish-climate-impact-assessment")
-install_github("gisviz", "ivanhanigan")
 
 # OR download and install
 # http://swish-climate-impact-assessment.github.io/tools/awaptools/awaptools-downloads.html
-# http://swish-climate-impact-assessment.github.io/tools/swishdbtools/swishdbtools-downloads.html
-# http://ivanhanigan.github.io/gisviz/
+
 
 library(awaptools)
-library(swishdbtools)
-library(gisviz)   
+library(rgdal)
+library(raster)
+library(plyr)
 library(reshape) 
+library(ggmap)
 # get weather data, beware that each grid is a couple of megabytes
 vars <- c("maxave","minave","totals","vprph09","vprph15") #,"solarave") 
 # solar only available after 1990
@@ -43,14 +42,14 @@ for(measure in vars)
 # get location
 address2 <- c("1 Lineaus way acton canberra", "daintree forest queensland", "hobart",
               "bourke")
-locn <- gGeoCode2(address2, first = T)
+locn <- geocode(address2)
 
 # this uses google maps API, better check this
 locn
 
 ## Treat data frame as spatial points
 epsg <- make_EPSG()
-shp <- SpatialPointsDataFrame(cbind(locn$lon,locn$lat),locn,
+shp <- SpatialPointsDataFrame(cbind(locn$lon,locn$lat),data.frame(address = address2, locn),
                               proj4string=CRS(epsg$prj4[epsg$code %in% '4283']))
 # now loop over grids and extract met data
 cfiles <-  dir(pattern="grid$")
@@ -78,10 +77,10 @@ dat$date <- paste(substr(dat$date,1,4), substr(dat$date,5,6), substr(dat$date,7,
 dat$measure <- matrix(unlist(strsplit(dat$gridname, "_")), ncol = 2, byrow=TRUE)[,1]
 
 
-dat <- arrange(dat[,c("address", "long", "lat", "date", "measure", "values")], address, date, measure)
+dat <- arrange(dat[,c("address", "lon", "lat", "date", "measure", "values")], address, date, measure)
 head(dat)
 
-dat2 <- cast(dat, address +    long     +  lat    +   date ~ measure, value = 'values',
+dat2 <- cast(dat, address +    lon     +  lat    +   date ~ measure, value = 'values',
       fun.aggregate= 'mean')
 dat2
 

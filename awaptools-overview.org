@@ -21,7 +21,7 @@
   
   ```r
   # depends
-  install.packages(c('raster', 'rgdal', 'plyr', 'RODBC', 'RCurl', 'XML', 'ggmap', 'maptools', 'spdep'))
+  install.packages(c('raster'))
   
   # This workflow uses the open source R software with some of our custom written packages:
   # aim daily weather for any point location from online BoM weather grids
@@ -29,18 +29,17 @@
   install.packages("devtools")
   library(devtools)
   install_github("awaptools", "swish-climate-impact-assessment")
-  install_github("swishdbtools", "swish-climate-impact-assessment")
-  install_github("gisviz", "ivanhanigan")
   
   # OR download and install
   # http://swish-climate-impact-assessment.github.io/tools/awaptools/awaptools-downloads.html
-  # http://swish-climate-impact-assessment.github.io/tools/swishdbtools/swishdbtools-downloads.html
-  # http://ivanhanigan.github.io/gisviz/
+  
   
   library(awaptools)
-  library(swishdbtools)
-  library(gisviz)   
+  library(rgdal)
+  library(raster)
+  library(plyr)
   library(reshape) 
+  library(ggmap)
   # get weather data, beware that each grid is a couple of megabytes
   vars <- c("maxave","minave","totals","vprph09","vprph15") #,"solarave") 
   # solar only available after 1990
@@ -53,14 +52,14 @@
   # get location
   address2 <- c("1 Lineaus way acton canberra", "daintree forest queensland", "hobart",
                 "bourke")
-  locn <- gGeoCode2(address2, first = T)
+  locn <- geocode(address2)
   
   # this uses google maps API, better check this
   locn
   
   ## Treat data frame as spatial points
   epsg <- make_EPSG()
-  shp <- SpatialPointsDataFrame(cbind(locn$lon,locn$lat),locn,
+  shp <- SpatialPointsDataFrame(cbind(locn$lon,locn$lat),data.frame(address = address2, locn),
                                 proj4string=CRS(epsg$prj4[epsg$code %in% '4283']))
   # now loop over grids and extract met data
   cfiles <-  dir(pattern="grid$")
@@ -88,10 +87,10 @@
   dat$measure <- matrix(unlist(strsplit(dat$gridname, "_")), ncol = 2, byrow=TRUE)[,1]
   
   
-  dat <- arrange(dat[,c("address", "long", "lat", "date", "measure", "values")], address, date, measure)
+  dat <- arrange(dat[,c("address", "lon", "lat", "date", "measure", "values")], address, date, measure)
   head(dat)
   
-  dat2 <- cast(dat, address +    long     +  lat    +   date ~ measure, value = 'values',
+  dat2 <- cast(dat, address +    lon     +  lat    +   date ~ measure, value = 'values',
         fun.aggregate= 'mean')
   dat2
   
@@ -361,8 +360,8 @@ image(r)
 
 #+end_src
 
-** core libs
-#+begin_src R  :session *R* :exports none :eval no :tangle R/func.r
+** DEPRECATED core libs
+#+begin_src R  :session *R* :exports none :eval no :tangle no
   # Project: AWAP_GRIDS
   # Author: ivanhanigan
   # Maintainer: Who to complain to <ivan.hanigan@gmail.com>
@@ -402,9 +401,9 @@ image(r)
   if (!require(ggplot2)) install.packages('ggplot2', repos='http://cran.csiro.au'); require(ggplot2)
   
 #+end_src
-** check_duplicates-lib
+** DEPRECATED check_duplicates-lib
 #+name:check_duplicates
-#+begin_src R :session *R* :tangle R/check_duplicates.r :exports none :eval no
+#+begin_src R :session *R* :tangle no :exports none :eval no
   ################################################################
   # name:check_duplicates
   check_duplicates <- function(conn, measures = c("vprph09","vprph15"), measure_name = "vprph", dates)
@@ -465,20 +464,10 @@ image(r)
   
 #+end_src
 
-** DatesUnavaliable
-*** COMMENT test-DatesUnavailable
-#+name:DatesUnavailable
-#+begin_src R :session *R* :tangle no :exports none :eval no
-  ################################################################
-  # name:DatesUnavailable
-  require(devtools)
-  install_github("awaptools", "swish-climate-impact-assessment")
-  DatesUnavailable
-  
-#+end_src
+** DEPRECATED DatesUnavaliable
 *** COMMENT R-DatesUnavailable
 #+name:DatesUnavailable
-#+begin_src R :session *shell* :tangle R/DatesUnavailable.R :exports none :eval no
+#+begin_src R :session *shell* :tangle no :exports none :eval no
 ###########################################################################
 # newnode: DatesUnavailable
 
@@ -518,6 +507,16 @@ DatesUnavailable <- function (dataBaseConnection, variableName, startDate, endDa
 }
 
 
+#+end_src
+*** COMMENT test-DatesUnavailable
+#+name:DatesUnavailable
+#+begin_src R :session *R* :tangle no :exports none :eval no
+  ################################################################
+  # name:DatesUnavailable
+  require(devtools)
+  install_github("awaptools", "swish-climate-impact-assessment")
+  DatesUnavailable
+  
 #+end_src
 
 ** Get Data 
