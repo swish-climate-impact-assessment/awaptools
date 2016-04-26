@@ -10,9 +10,6 @@ awaptools
 #### R-Code: A workflow to download and process the public BoM weather grids.
 
 ```r
-# depends
-install.packages(c('raster'))
-
 # This workflow uses the open source R software with some of our custom written packages:
 # aim daily weather for any point location from online BoM weather grids
 # depends on some github packages, either use devtools
