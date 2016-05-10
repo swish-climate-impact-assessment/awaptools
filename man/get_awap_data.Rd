@@ -56,20 +56,6 @@ ivanhanigan
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-## Not run:
-library(awaptools)
-library(raster)
-variableslist <- variableslist()  
-vars <- c("maxave","minave","totals","vprph09","vprph15","solarave")
-for(measure in vars)
-{
-  get_awap_data(start = '1990-01-01',end = '1990-01-01', measure)
-}
-fileslist <- dir(pattern="grid$")
-r <- raster(fileslist[1])
-plot(r)
-
-## End(Not run)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

@@ -11,6 +11,12 @@
   awaptools
   =========
   
+  [![Travis Build Status](https://img.shields.io/travis/swish-climate-impact-assessment/awaptools/master.svg?label=Mac%20OSX%20%26%20Linux)](https://travis-ci.org/swish-climate-impact-assessment/awaptools)
+  [![AppVeyor Build Status](https://img.shields.io/appveyor/ci/swish-climate-impact-assessment/awaptools/master.svg?label=Windows)](https://ci.appveyor.com/project/swish-climate-impact-assessment/awaptools)
+  [![Coverage Status](https://codecov.io/github/swish-climate-impact-assessment/awaptools/coverage.svg?branch=master)](https://codecov.io/github/swish-climate-impact-assessment/awaptools?branch=master)
+  [![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/awaptools)](http://cran.r-project.org/package=awaptools)
+  
+  
   - The Bureau of Meteorology has generated a range of gridded meteorological datasets for Australia as a contribution to the Australian Water Availability Project (AWAP). 
   - An R package to download and format the AWAP grids.
   - Binaries available from [http://swish-climate-impact-assessment.github.com/tools.html](http://swish-climate-impact-assessment.github.com/tools)
@@ -334,20 +340,6 @@ ivanhanigan
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-## Not run:
-library(awaptools)
-library(raster)
-variableslist <- variableslist()  
-vars <- c("maxave","minave","totals","vprph09","vprph15","solarave")
-for(measure in vars)
-{
-  get_awap_data(start = '1990-01-01',end = '1990-01-01', measure)
-}
-fileslist <- dir(pattern="grid$")
-r <- raster(fileslist[1])
-plot(r)
-
-## End(Not run)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
