@@ -1,7 +1,7 @@
 awaptools
 =========
 
-[![Travis Build Status](https://img.shields.io/travis/swish-climate-impact-assessment/awaptools/master.svg?label=Mac%20OSX%20%26%20Linux)](https://travis-ci.org/swish-climate-impact-assessment/awaptools)
+[![Travis Build Status](https://travis-ci.org/swish-climate-impact-assessment/awaptools.png?branch=develop)](https://travis-ci.org/swish-climate-impact-assessment/awaptools)
 [![AppVeyor Build Status](https://img.shields.io/appveyor/ci/swish-climate-impact-assessment/awaptools/master.svg?label=Windows)](https://ci.appveyor.com/project/swish-climate-impact-assessment/awaptools)
 [![Coverage Status](https://codecov.io/github/swish-climate-impact-assessment/awaptools/coverage.svg?branch=master)](https://codecov.io/github/swish-climate-impact-assessment/awaptools?branch=master)
 [![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/awaptools)](http://cran.r-project.org/package=awaptools)
