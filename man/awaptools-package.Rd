@@ -19,7 +19,7 @@ License: \tab GPL (>= 2)\cr
 
 }
 \author{
-ivanhanigan, J. Guillaume, F. Markham, G. Williamson, I. Szarka, paleo13
+ivanhanigan, J. Guillaume, F. Markham, G. Williamson, I. Szarka, Jeffrey O. Hanson
 
 Maintainer: Who to complain to ivan.hanigan@anu.edu.au
 
