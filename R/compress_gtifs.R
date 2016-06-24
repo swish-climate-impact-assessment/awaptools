@@ -4,7 +4,7 @@ compress_gtifs <- function(indir = getwd()){
 # load some, plot to check, and demonstrate conversion to GeoTIF
 cfiles <- stack(dir(pattern = "grid$"))
 
-plot(cfiles, nc = 2) # plot to look at
+#plot(cfiles, nc = 2) # plot to look at
 
 # Check if GTif/AWAP directory exists, it not, create it (taken from http://stackoverflow.com/questions/4216753/check-existence-of-directory-and-create-if-doesnt-exist)
 
@@ -23,6 +23,7 @@ if (file.exists(file.path(indir, subDir))){
 writeRaster(cfiles, filename = "GTif", format = "GTiff",
             bylayer = TRUE, overwrite = TRUE, suffix = "names",
             dataType = "INT2S", options = c("COMPRESS=LZW"))
+setwd(indir)
 print("done")
-
+  
 }
