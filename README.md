@@ -50,7 +50,7 @@ compress_gtifs(indir = getwd())
 ```
 ### Step 2: Extract a time series of weather data for my locations
 ```r
-datadir <- "data_daily"
+datadir <- "GTif"
 library(rgdal)
 library(plyr)
 library(reshape) 
@@ -71,7 +71,7 @@ shp <- SpatialPointsDataFrame(cbind(locn$lon,locn$lat),data.frame(address = addr
 
 # TODO make this extraction a function, and optimise with raster package things like stack and brick
 # now loop over grids and extract met data
-cfiles <-  dir(datadir, pattern=".tif$")
+cfiles <-  dir(datadir, pattern=".tif$",  full.names = T)
  
 for (i in seq_len(length(cfiles))) {
   #i <- 1 ## for stepping thru
@@ -91,9 +91,10 @@ for (i in seq_len(length(cfiles))) {
 
 dat <- read.csv("output.csv", stringsAsFactors = F)
 head(dat)
-dat$date <- matrix(unlist(strsplit(dat$gridname, "_")), ncol = 2, byrow=TRUE)[,2]
+dat$date <- matrix(unlist(strsplit(dat$gridname, "_")), ncol = 3, byrow=TRUE)[,3]
 dat$date <- paste(substr(dat$date,1,4), substr(dat$date,5,6), substr(dat$date,7,8), sep = "-")
-dat$measure <- matrix(unlist(strsplit(dat$gridname, "_")), ncol = 2, byrow=TRUE)[,1]
+dat$measure <- matrix(unlist(strsplit(dat$gridname, "_")), ncol = 3, byrow=TRUE)[,2]
+
 
 
 dat <- arrange(dat[,c("address", "lon", "lat", "date", "measure", "values")], address, date, measure)
