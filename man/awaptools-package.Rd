@@ -12,14 +12,15 @@ Various functions to assist download and format of Australian Water Availability
 \tabular{ll}{
 Package: \tab awaptools\cr
 Type: \tab Package\cr
-Version: \tab 1.2.1\cr
-Date: \tab 2016-09-10\cr
+Version: \tab 1.2.2\cr
+Date: \tab 2016-06-24\cr
 License: \tab GPL (>= 2)\cr
 }
 
 }
 \author{
-ivanhanigan, J. Guillaume, F. Markham, G. Williamson, I. Szarka, Jeffrey O. Hanson
+ivanhanigan, J. Guillaume, F. Markham, G. Williamson, I. Szarka, Jeffrey
+O. Hanson, Adam H. Sparks
 
 Maintainer: Who to complain to ivan.hanigan@anu.edu.au
 

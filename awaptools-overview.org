@@ -6,16 +6,25 @@
 #+LATEX: \tableofcontents
 -----
 * README-code
+** readme
 #+name:README
 #+begin_src R :session *R* :tangle README.md :exports reports :eval no :padline no
   awaptools
   =========
+  
+  
   
   [![Travis Build Status](https://travis-ci.org/swish-climate-impact-assessment/awaptools.png?branch=develop)](https://travis-ci.org/swish-climate-impact-assessment/awaptools)
   [![AppVeyor Build Status](https://img.shields.io/appveyor/ci/ivanhanigan/awaptools/master.svg?label=Windows)](https://ci.appveyor.com/project/ivanhanigan/awaptools)
   [![Coverage Status](https://codecov.io/github/swish-climate-impact-assessment/awaptools/coverage.svg?branch=master)](https://codecov.io/github/swish-climate-impact-assessment/awaptools?branch=master)
   [![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/awaptools)](http://cran.r-project.org/package=awaptools)
   
+  - Author: ivanhanigan, J. Guillaume, F. Markham, G. Williamson, I. Szarka, Jeffrey O. Hanson, Adam H. Sparks
+  - Maintainer: <ivan.hanigan@gmail.com>
+  - Depends: raster, sp
+  - License: GPL (>= 2)
+    
+  # Source data information
   
   - The Bureau of Meteorology has generated a range of gridded meteorological datasets for Australia as a contribution to the Australian Water Availability Project (AWAP). 
   - An R package to download and format the AWAP grids.
@@ -29,20 +38,16 @@
   # This workflow uses the open source R software with some of our custom written packages:
   # aim daily weather for any point location from online BoM weather grids
   # depends on some github packages, either use devtools
-  install.packages("devtools")
-  library(devtools)
-  install_github("awaptools", "swish-climate-impact-assessment")
+  install.packages("githubinstall")
+  library(githubinstall)
+  githubinstall("awaptools")
   
   # OR download and install
   # http://swish-climate-impact-assessment.github.io/tools/awaptools/awaptools-downloads.html
   
-  
+  # Basic usage
   library(awaptools)
-  library(rgdal)
   library(raster)
-  library(plyr)
-  library(reshape) 
-  library(ggmap)
   # get weather data, beware that each grid is a couple of megabytes
   vars <- c("maxave","minave","totals","vprph09","vprph15") #,"solarave") 
   # solar only available after 1990
@@ -51,6 +56,13 @@
     #measure <- vars[1]
     get_awap_data(start = '2016-03-04',end = '2016-03-06', measure)
   }
+  
+  
+  # Extract a time series of weather data
+  library(rgdal)
+  library(plyr)
+  library(reshape) 
+  library(ggmap)
    
   # get location
   address2 <- c("1 Lineaus way acton canberra", "daintree forest queensland", "hobart",
@@ -64,6 +76,17 @@
   epsg <- make_EPSG()
   shp <- SpatialPointsDataFrame(cbind(locn$lon,locn$lat),data.frame(address = address2, locn),
                                 proj4string=CRS(epsg$prj4[epsg$code %in% '4283']))
+  
+  
+  
+#+end_src
+*** COMMENT snip
+
+#+begin_src R :session *R* :tangle no :exports none :eval no
+'name:a'
+
+
+
   # now loop over grids and extract met data
   cfiles <-  dir(pattern="grid$")
    
@@ -707,6 +730,36 @@ get_data<-function(variable,measure,timestep,startdate,enddate){
   
 #+end_src
 
+** R/compress_gtifs
+#+begin_src R :session *R* :tangle R/compress_gtifs.R :exports none :eval no
+  compress_gtifs <- function(indir = getwd()){
+  
+  # load some, plot to check, and demonstrate conversion to GeoTIF
+  cfiles <- stack(dir(pattern = "grid$"))
+  
+  plot(cfiles, nc = 2) # plot to look at
+  
+  # Check if GTif/AWAP directory exists, it not, create it (taken from http://stackoverflow.com/questions/4216753/check-existence-of-directory-and-create-if-doesnt-exist)
+  
+  subDir <- "GTif"
+  
+  if (file.exists(file.path(indir, subDir))){
+      setwd(file.path(indir, subDir))
+  } else {
+      dir.create(file.path(indir, subDir))
+      setwd(file.path(indir, subDir))
+  
+  }
+  
+  # write grid files as GeoTif files to disk with compression
+  # to save space
+  writeRaster(cfiles, filename = "GTif", format = "GTiff",
+              bylayer = TRUE, overwrite = TRUE, suffix = "names",
+              dataType = "INT2S", options = c("COMPRESS=LZW"))
+  print("done")
+  
+  }
+#+end_src
 ** raster_aggregate
 #+name:raster_aggregate
 #+begin_src R :session *R* :tangle R/raster_aggregate.r :exports none :eval no

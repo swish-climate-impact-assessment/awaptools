@@ -1,9 +1,9 @@
 Package: awaptools
 Type: Package
 Title: download and format Australian Water Availability Grids
-Version: 1.2.1
-Date: 2016-05-10
-Author: ivanhanigan, J. Guillaume, F. Markham, G. Williamson, I. Szarka, Jeffrey O. Hanson
+Version: 1.2.2
+Date: 2016-06-24
+Author: ivanhanigan, J. Guillaume, F. Markham, G. Williamson, I. Szarka, Jeffrey O. Hanson, Adam H. Sparks
 Maintainer: <ivan.hanigan@gmail.com>
 Depends: raster, sp
 Description: swish-climate-impact-assessment 
