@@ -680,7 +680,7 @@ get_data<-function(variable,measure,timestep,startdate,enddate){
 
 ** R/compress_gtifs
 #+begin_src R :session *R* :tangle R/compress_gtifs.R :exports none :eval no
-  compress_gtifs2 <- function (indir = getwd(), subDir = "GTif", filelist = NULL){
+  compress_gtifs <- function (indir = getwd(), subDir = "GTif", filelist = NULL){
     if(is.null(filelist)) stop("no list of grids provided")
     cfiles <- stack(filelist)
     

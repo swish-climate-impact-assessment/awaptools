@@ -1,5 +1,5 @@
 
-compress_gtifs2 <- function (indir = getwd(), subDir = "GTif", filelist = NULL){
+compress_gtifs <- function (indir = getwd(), subDir = "GTif", filelist = NULL){
   if(is.null(filelist)) stop("no list of grids provided")
   cfiles <- stack(filelist)
   
