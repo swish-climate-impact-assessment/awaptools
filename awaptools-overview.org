@@ -5,6 +5,11 @@
 #+LaTeX_CLASS_OPTIONS: [a4paper]
 #+LATEX: \tableofcontents
 -----
+* TODO-list
+** TODO code for ndviave
+
+http://www.bom.gov.au/web03/ncc/www/awap/       ndvi/ndviave/ month/     grid/     history/nat/2016090120160930.Z
+http://www.bom.gov.au/web03/ncc/www/awap/{variable}/{measure}/{timestep}/grid/0.05/history/nat/{startdate}{enddate}.grid.Z
 * README-code
 ** readme
 #+name:README
@@ -675,33 +680,22 @@ get_data<-function(variable,measure,timestep,startdate,enddate){
 
 ** R/compress_gtifs
 #+begin_src R :session *R* :tangle R/compress_gtifs.R :exports none :eval no
-  compress_gtifs <- function(indir = getwd()){
-  
-  # load some, plot to check, and demonstrate conversion to GeoTIF
-  cfiles <- stack(dir(pattern = "grid$"))
-  
-  #plot(cfiles, nc = 2) # plot to look at
-  
-  # Check if GTif/AWAP directory exists, it not, create it (taken from http://stackoverflow.com/questions/4216753/check-existence-of-directory-and-create-if-doesnt-exist)
-  
-  subDir <- "GTif"
-  
-  if (file.exists(file.path(indir, subDir))){
+  compress_gtifs2 <- function (indir = getwd(), subDir = "GTif", filelist = NULL){
+    if(is.null(filelist)) stop("no list of grids provided")
+    cfiles <- stack(filelist)
+    
+    if (file.exists(file.path(indir, subDir))) {
       setwd(file.path(indir, subDir))
-  } else {
+    }
+    else {
       dir.create(file.path(indir, subDir))
       setwd(file.path(indir, subDir))
-  
-  }
-  
-  # write grid files as GeoTif files to disk with compression
-  # to save space
-  writeRaster(cfiles, filename = "GTif", format = "GTiff",
-              bylayer = TRUE, overwrite = TRUE, suffix = "names",
-              dataType = "INT2S", options = c("COMPRESS=LZW"))
-  setwd(indir)
-  print("done")
-    
+    }
+    writeRaster(cfiles, filename = "GTif", format = "GTiff", 
+                bylayer = TRUE, overwrite = TRUE, suffix = "names", dataType = "INT2S", 
+                options = c("COMPRESS=LZW"))
+    setwd(indir)
+    print("done")
   }
 #+end_src
 ** raster_aggregate
