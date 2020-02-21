@@ -11,7 +11,7 @@ compress_gtifs <- function (indir = getwd(), subDir = "GTif", filelist = NULL){
     setwd(file.path(indir, subDir))
   }
   writeRaster(cfiles, filename = "GTif", format = "GTiff", 
-              bylayer = TRUE, overwrite = TRUE, suffix = "names", dataType = "INT2S", 
+              bylayer = TRUE, overwrite = TRUE, suffix = "names", datatype = "INT2S", 
               options = c("COMPRESS=LZW"))
   setwd(indir)
   print("done")
